@@ -1,0 +1,31 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/token/refresh/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "refresh": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  const responseData = res.getBody();
+  
+  // A resposta do refresh contém uma chave "access"
+  if (responseData && responseData.access) {
+    // Sobrescrevemos a variável authToken com o novo token de acesso
+    bru.setEnvVar("authToken", responseData.access);
+  }
+}
+
+settings {
+  encodeUrl: true
+}

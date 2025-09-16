@@ -1,0 +1,29 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/login/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "aluno_teste2@faculdade.edu",
+    "password": "SenhaForte@1"
+  }
+}
+
+script:post-response {
+  const responseData = res.getBody();
+  
+  // Capturamos e salvamos os dois tokens
+  if (responseData && responseData.access && responseData.refresh) {
+    bru.setEnvVar("authToken", responseData.access);
+    bru.setEnvVar("refreshToken", responseData.refresh);
+    bru.setEnvVar("userProfilePK", responseData.user.pk);
+  }
+}

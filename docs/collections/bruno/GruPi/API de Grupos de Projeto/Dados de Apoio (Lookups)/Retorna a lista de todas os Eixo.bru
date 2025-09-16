@@ -1,0 +1,15 @@
+meta {
+  name: Retorna a lista de todas os Eixo
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/eixos/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: authToken
+}

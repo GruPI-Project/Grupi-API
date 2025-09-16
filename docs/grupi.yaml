@@ -1,9 +1,266 @@
-openapi: 3.1.0
+# Versão da Especificação OpenAPI
+openapi: 3.0.3
+
+# ----------------------------------------
+# Metadados da API
+# ----------------------------------------
 info:
-  title: $Title$
-  description: $Title$
+  title: API de Grupos de Projeto
+  description: |-
+    API para a plataforma de formação de grupos de projeto de faculdade. 
+    Permite que usuários se cadastrem, encontrem grupos compatíveis com base em critérios acadêmicos e gerenciem sua participação.
+    A autenticação é feita via tokens JWT.
   version: 1.0.0
+  contact:
+    name: Desenvolvedor da API
+    email: api-dev@exemplo.com
+
+# ----------------------------------------
+# Servidores
+# ----------------------------------------
 servers:
-  - url: '$https$'
+  - url: http://127.0.0.1:8000/api/v1
+    description: Servidor de Desenvolvimento Local
+
+# ----------------------------------------
+# Tags para Organização
+# ----------------------------------------
+tags:
+  - name: Autenticação
+    description: Fluxo completo de registro, login, logout e consulta de usuário.
+  - name: Grupos de Projeto
+    description: Endpoints para criar, listar, visualizar e gerenciar grupos.
+  - name: Perfis e Habilidades
+    description: Operações relacionadas ao perfil e às habilidades do usuário.
+  - name: Dados de Apoio (Lookups)
+    description: Endpoints para obter listas de dados acadêmicos como Polos, Cursos, etc.
+
+# ----------------------------------------
+# Definição dos Endpoints (Paths)
+# ----------------------------------------
 paths:
-  $END$
+  # --- Autenticação ---
+  /auth/registration/:
+    post:
+      tags: [Autenticação]
+      summary: Registra um novo usuário e seu perfil.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuário e perfil criados com sucesso. Retorna tokens de autenticação.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Erro de validação.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidation'
+  
+  /auth/login/:
+    post:
+      tags: [Autenticação]
+      summary: Autentica um usuário existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Autenticação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Credenciais inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorGeneric'
+
+  /auth/logout/:
+    post:
+      tags: [Autenticação]
+      summary: Desconecta o usuário autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout realizado com sucesso.
+        '401':
+          description: Não autorizado.
+
+  /auth/user/:
+    get:
+      tags: [Autenticação]
+      summary: Obtém os detalhes do usuário logado.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dados do usuário.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+        '401':
+          description: Não autorizado.
+
+  # --- Grupos de Projeto ---
+  /project-groups/:
+    get:
+      tags: [Grupos de Projeto]
+      summary: Lista os grupos compatíveis com o usuário.
+      description: Retorna uma lista de grupos filtrada pelas regras de match (PI, DRP, Eixo) do usuário autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Uma lista de grupos compatíveis.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectGroupList'
+        '401':
+          description: Não autorizado.
+          
+  # --- Dados de Apoio (Lookups) ---
+  /drps/:
+    get:
+      tags: [Dados de Apoio (Lookups)]
+      summary: Retorna a lista de todas as DRPs.
+      responses:
+        '200':
+          description: Lista de DRPs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DRP'
+  /polos/:
+    get:
+      tags: [Dados de Apoio (Lookups)]
+      summary: Retorna a lista de todos os Polos.
+      responses:
+        '200':
+          description: Lista de Polos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Polo'
+  # ... (Adicionar outros endpoints de lookup como /cursos/, /eixos/, etc. da mesma forma)
+
+# ----------------------------------------
+# Componentes Reutilizáveis
+# ----------------------------------------
+components:
+  # --- Modelos de Dados (Schemas) ---
+  schemas:
+    # Requisições
+    RegisterRequest:
+      type: object
+      required: [email, password, password2, first_name, last_name, projeto_integrador, drp, polo, curso]
+      properties:
+        email: { type: string, format: email, example: 'novoaluno@exemplo.com' }
+        password: { type: string, format: password, example: 'senhaF0rte!' }
+        password2: { type: string, format: password, example: 'senhaF0rte!' }
+        first_name: { type: string, example: 'Ana' }
+        last_name: { type: string, example: 'Souza' }
+        projeto_integrador: { type: integer, description: "ID do Projeto Integrador.", example: 1 }
+        drp: { type: integer, description: "ID da DRP.", example: 5 }
+        polo: { type: integer, description: "ID do Polo.", example: 22 }
+        curso: { type: integer, description: "ID do Curso.", example: 10 }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: 'aluno@exemplo.com' }
+        password: { type: string, format: password, example: 'senha_segura_123' }
+
+    # Respostas
+    TokenResponse:
+      type: object
+      properties:
+        access_token: { type: string, example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+        refresh_token: { type: string, example: 'eyJ0b2tlbl90eXBlIjoicmVmcmVzaCI...' }
+        
+    UserDetails:
+      type: object
+      properties:
+        pk: { type: integer, example: 42 }
+        email: { type: string, format: email, example: "aluno@exemplo.com" }
+        first_name: { type: string, example: "João" }
+        last_name: { type: string, example: "Silva" }
+        
+    UserSummary:
+      type: object
+      properties:
+        id: { type: integer, example: 42 }
+        first_name: { type: string, example: "João" }
+        last_name: { type: string, example: "Silva" }
+
+    ProjectGroupList:
+      type: object
+      properties:
+        id: { type: integer, example: 101 }
+        name: { type: string, example: "Grupo de Robótica" }
+        description: { type: string, example: "Foco em Arduino e automação para o PI 3." }
+        join_policy: { type: string, enum: [MODERATED, OPEN], example: "MODERATED" }
+        creator: { $ref: '#/components/schemas/UserSummary' }
+        polo_especifico: { type: string, nullable: true, example: "Polo Itaquera" }
+        curso_especifico: { type: string, nullable: true, example: "Análise e Desenvolvimento de Sistemas" }
+        member_count: { type: integer, example: 4 }
+        
+    DRP:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        numero: { type: integer, example: 1 }
+        nome: { type: string, example: "DRP 1 - São Paulo Capital" }
+        
+    Polo:
+      type: object
+      properties:
+        id: { type: integer, example: 22 }
+        nome: { type: string, example: "Polo Itaquera" }
+        drp_id: { type: integer, example: 1 }
+
+    # Erros
+    ErrorValidation:
+      type: object
+      properties:
+        email: { type: array, items: { type: string, example: 'Este e-mail já está em uso.' } }
+        password: { type: array, items: { type: string, example: 'Esta senha é muito curta.' } }
+    
+    ErrorGeneric:
+      type: object
+      properties:
+        non_field_errors:
+          type: array
+          items:
+            type: string
+          example: ["Não foi possível fazer o login com as credenciais fornecidas."]
+
+  # --- Esquemas de Segurança ---
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token de acesso JWT obtido no login. Enviar no formato: 'Bearer [token]'"

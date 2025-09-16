@@ -43,10 +43,21 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name')}),
+        # ESTA SEÇÃO ESTAVA FALTANDO:
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        # ESTA SEÇÃO ESTAVA FALTANDO:
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
-    add_fieldsets =  (
-        (None, {"fields": ("email", "password1", "password2")}),
+
+    # 'add_fieldsets' é para a TELA DE CRIAÇÃO de um novo usuário
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            # Corrigido para 'password' e 'password2' como o UserAdmin espera
+            'fields': ('email', 'password', 'password2', 'first_name', 'last_name')
+        }),
     )
+
 
 #admin.site.register(Eixo)
 @admin.register(Eixo)

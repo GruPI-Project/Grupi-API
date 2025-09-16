@@ -1,0 +1,21 @@
+meta {
+  name: PATCH Self Profile
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/profile/me/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "tags": [1]
+  }
+}
+
+settings {
+  encodeUrl: true
+}

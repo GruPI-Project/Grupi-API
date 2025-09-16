@@ -1,3 +1,4 @@
+import uuid
 from doctest import master
 
 from django.contrib.auth.base_user import BaseUserManager
@@ -11,6 +12,9 @@ from django.utils.translation import gettext_lazy as _
 #Modelo de Autenticacao customizado para usar o email
 class CustomUser(AbstractUser):
 
+    #Mudar o ID para UUID para evitar que consigam fazer ataques de Enumeracao para
+    #a captura de dados
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = None
     email = models.EmailField(_('email address'), unique=True)
 
@@ -167,6 +171,9 @@ class ProjectGroup(models.Model):
 
 # Classe de dados que vai controlar o profile do usuario
 class UserProfile(models.Model):
+
+    #Usar o UUIDv4 evita ataques de enumeracao
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
     projeto_integrador = models.ForeignKey(
         ProjetoIntegrador,
@@ -174,12 +181,7 @@ class UserProfile(models.Model):
         related_name='alunos',
         null=True
     )
-    drp = models.ForeignKey(
-       DRP,
-       related_name="alunos",
-       on_delete=models.PROTECT,
-       null=True
-    )
+
     polo = models.ForeignKey(
        Polo,
        related_name="alunos",
@@ -192,11 +194,12 @@ class UserProfile(models.Model):
         on_delete=models.PROTECT,
     )
 
-    eixo = models.ForeignKey(
-        Eixo,
-        related_name="alunos",
-        on_delete=models.PROTECT,
+    tags = models.ManyToManyField(
+        Tags,
+        through='UserTags',
+        related_name='profiles'
     )
+
     class Meta:
         verbose_name = "Profile de Usuario"
         verbose_name_plural = "Profiles de Usuarios"
@@ -282,6 +285,13 @@ class UserTags(models.Model):
 
     def __str__(self):
         return f"#{self.tag}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            current_tag_count = UserTags.objects.filter(profile=self.profile).count()
+            if current_tag_count >= 5:
+                raise ValidationError("Limite de 5 tags por usuário atingido.")
+        super().save(*args, **kwargs)
 
 # project_group_tags vinculo entre o grupo e as tags escolidas
 class ProjectGroupTags(models.Model):

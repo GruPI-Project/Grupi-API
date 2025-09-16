@@ -1,0 +1,15 @@
+meta {
+  name: Get Self Profile
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/profile/me/
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

@@ -32,13 +32,26 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    'core',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'GruPI.urls'
@@ -101,6 +115,47 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTH_USER_MODEL = 'core.CustomUser'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_HTTPONLY': False,
+    'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+#    'LOGIN_SERIALIZER': 'core.serializers.CustomLoginSerializer',
+    'REGISTER_SERIALIZER': 'core.serializers.CustomRegisterSerializer',
+    'USER_DETAILS_SERIALIZER': 'core.serializers.CustomUserDetailsSerializer',
+}
+
+
+ACCOUNT_ADAPTER = 'core.adapters.CustomAccountAdapter'
+
+SITE_ID = 1
+
+# Garante que o Django use o motor de autenticação do allauth, que entende de logins por email.
+AUTHENTICATION_BACKENDS = (
+    'allauth.account.auth_backends.AuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+# Configurações principais do allauth
+ACCOUNT_LOGIN_METHODS = {'email'}
+
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+# Garante que o e-mail seja verificado (opcional para dev)
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+
+# Define que o login é feito por e-mail e que o username não é usado
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+
+# --- Backend de E-mail para Desenvolvimento ---
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 # Internationalization
