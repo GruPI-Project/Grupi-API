@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polos DRP - Lista Completa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #e8ebf0;
+            border-bottom: 1px solid #d1d9e6;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 250px;
+        }
+
+        .drp-filter {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .drp-badge {
+            background-color: #e0e6ef;
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .drp-badge:hover {
+            background-color: #4a6491;
+            color: white;
+        }
+
+        .drp-badge.active {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        .polo-list {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .polo-item {
+            padding: 15px;
+            background-color: #f9fafc;
+            border-radius: 8px;
+            border-left: 4px solid #4a6491;
+            transition: transform 0.2s;
+        }
+
+        .polo-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .polo-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .polo-drp {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: #e0e6ef;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #4a6491;
+            font-weight: 500;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-box, .drp-filter {
+                width: 100%;
+                justify-content: center;
+            }
+
+            input[type="text"] {
+                width: 100%;
+            }
+
+            .polo-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Polos DRP</h1>
+            <p class="description">Lista completa de polos organizados por região DRP. Utilize o campo de busca para filtrar por nome ou clique em um DRP específico para visualizar apenas os polos daquela região.</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar polo por nome...">
+            </div>
+
+            <div class="drp-filter">
+                <span class="drp-badge active" data-drp="all">Todos</span>
+                <span class="drp-badge" data-drp="DRP01">DRP01</span>
+                <span class="drp-badge" data-drp="DRP02">DRP02</span>
+                <span class="drp-badge" data-drp="DRP03">DRP03</span>
+                <span class="drp-badge" data-drp="DRP04">DRP04</span>
+                <span class="drp-badge" data-drp="DRP05">DRP05</span>
+                <span class="drp-badge" data-drp="DRP06">DRP06</span>
+                <span class="drp-badge" data-drp="DRP07">DRP07</span>
+                <span class="drp-badge" data-drp="DRP08">DRP08</span>
+                <span class="drp-badge" data-drp="DRP09">DRP09</span>
+                <span class="drp-badge" data-drp="DRP10">DRP10</span>
+                <span class="drp-badge" data-drp="DRP11">DRP11</span>
+                <span class="drp-badge" data-drp="DRP12">DRP12</span>
+                <span class="drp-badge" data-drp="DRP13">DRP13</span>
+                <span class="drp-badge" data-drp="DRP14">DRP14</span>
+            </div>
+        </div>
+
+        <div class="polo-list" id="poloList">
+            <!-- Os polos serão inseridos aqui via JavaScript -->
+        </div>
+
+        <footer>
+            <p>Total de polos: <span id="totalCount">0</span> | Polos exibidos: <span id="displayCount">0</span></p>
+        </footer>
+    </div>
+
+    <script>
+        // Dados dos polos
+        const polos = [
+            { name: "POLO", drp: "DRP" },
+            { name: "ARUJÁ", drp: "DRP01" },
+            { name: "BARUERI", drp: "DRP01" },
+            { name: "CAIEIRAS", drp: "DRP01" },
+            { name: "CAJAMAR", drp: "DRP01" },
+            { name: "CARAPICUÍBA", drp: "DRP01" },
+            { name: "DIADEMA", drp: "DRP01" },
+            { name: "EMBU DAS ARTES", drp: "DRP01" },
+            { name: "FERRAZ DE VASCONCELOS", drp: "DRP01" },
+            { name: "FRANCISCO MORATO", drp: "DRP01" },
+            { name: "FRANCO DA ROCHA", drp: "DRP01" },
+            { name: "GUARAREMA", drp: "DRP01" },
+            { name: "ITAPECERICA DA SERRA", drp: "DRP01" },
+            { name: "ITAPEVI", drp: "DRP01" },
+            { name: "ITAQUAQUECETUBA", drp: "DRP01" },
+            { name: "JANDIRA", drp: "DRP01" },
+            { name: "JUQUITIBA", drp: "DRP01" },
+            { name: "MAIRIPORÃ", drp: "DRP01" },
+            { name: "MAUÁ", drp: "DRP01" },
+            { name: "MOGI DAS CRUZES", drp: "DRP01" },
+            { name: "OSASCO - UAB", drp: "DRP01" },
+            { name: "POÁ", drp: "DRP01" },
+            { name: "RIBEIRÃO PIRES", drp: "DRP01" },
+            { name: "SALESÓPOLIS", drp: "DRP01" },
+            { name: "SANTA ISABEL", drp: "DRP01" },
+            { name: "SANTANA DE PARNAÍBA", drp: "DRP01" },
+            { name: "SANTO ANDRÉ - PREFEITURA", drp: "DRP01" },
+            { name: "SÃO CAETANO DO SUL - PREFEITURA", drp: "DRP01" },
+            { name: "SÃO LOURENÇO DA SERRA", drp: "DRP01" },
+            { name: "SUZANO", drp: "DRP01" },
+            { name: "VARGEM GRANDE PAULISTA", drp: "DRP01" },
+            { name: "GUARULHOS", drp: "DRP01" },
+            { name: "SÃO BERNARDO DO CAMPO", drp: "DRP01" },
+            { name: "BERTIOGA", drp: "DRP02" },
+            { name: "CUBATÃO", drp: "DRP02" },
+            { name: "GUARUJÁ", drp: "DRP02" },
+            { name: "ILHA COMPRIDA", drp: "DRP02" },
+            { name: "ITANHAÉM", drp: "DRP02" },
+            { name: "ITARIRI", drp: "DRP02" },
+            { name: "JACUPIRANGA", drp: "DRP02" },
+            { name: "JUQUIÁ", drp: "DRP02" },
+            { name: "MONGAGUÁ", drp: "DRP02" },
+            { name: "PARIQUERA-AÇU", drp: "DRP02" },
+            { name: "PEDRO DE TOLEDO", drp: "DRP02" },
+            { name: "PRAIA GRANDE", drp: "DRP02" },
+            { name: "REGISTRO", drp: "DRP02" },
+            { name: "SANTOS", drp: "DRP02" },
+            { name: "SÃO VICENTE", drp: "DRP02" },
+            { name: "SETE BARRAS", drp: "DRP02" },
+            { name: "CAJATI", drp: "DRP02" },
+            { name: "ELDORADO", drp: "DRP02" },
+            { name: "IGUAPE", drp: "DRP02" },
+            { name: "MIRACATU", drp: "DRP02" },
+            { name: "PERUÍBE", drp: "DRP02" },
+            { name: "APARECIDA", drp: "DRP03" },
+            { name: "AREIAS", drp: "DRP03" },
+            { name: "BANANAL", drp: "DRP03" },
+            { name: "CAMPOS DO JORDÃO", drp: "DRP03" },
+            { name: "CARAGUATATUBA", drp: "DRP03" },
+            { name: "CRUZEIRO - PREFEITURA", drp: "DRP03" },
+            { name: "CUNHA", drp: "DRP03" },
+            { name: "GUARATINGUETÁ", drp: "DRP03" },
+            { name: "IGARATÁ", drp: "DRP03" },
+            { name: "ILHABELA", drp: "DRP03" },
+            { name: "JACAREÍ", drp: "DRP03" },
+            { name: "JAMBEIRO", drp: "DRP03" },
+            { name: "LAGOINHA", drp: "DRP03" },
+            { name: "LORENA", drp: "DRP03" },
+            { name: "NATIVIDADE DA SERRA", drp: "DRP03" },
+            { name: "PARAIBUNA", drp: "DRP03" },
+            { name: "PINDAMONHANGABA", drp: "DRP03" },
+            { name: "PIQUETE", drp: "DRP03" },
+            { name: "QUELUZ", drp: "DRP03" },
+            { name: "SANTA BRANCA", drp: "DRP03" },
+            { name: "SÃO JOSÉ DO BARREIRO", drp: "DRP03" },
+            { name: "SÃO JOSÉ DOS CAMPOS", drp: "DRP03" },
+            { name: "SÃO JOSÉ DOS CAMPOS - PARQUE TEI", drp: "DRP03" },
+            { name: "SÃO JOSÉ DOS CAMPOS - SÃO FRANC", drp: "DRP03" },
+            { name: "TAUBATÉ", drp: "DRP03" },
+            { name: "UBATUBA", drp: "DRP03" },
+            { name: "CAÇAPAVA", drp: "DRP03" },
+            { name: "CACHOEIRA PAULISTA", drp: "DRP03" },
+            { name: "POTIM", drp: "DRP03" },
+            { name: "REDENÇÃO DA SERRA", drp: "DRP03" },
+            { name: "SÃO LUIZ DO PARAITINGA", drp: "DRP03" },
+            { name: "SÃO SEBASTIÃO", drp: "DRP03" },
+            { name: "TREMEMBÉ", drp: "DRP03" },
+            { name: "AGUÁÍ", drp: "DRP04" },
+            { name: "AMPARO", drp: "DRP04" },
+            { name: "ARARAS", drp: "DRP04" },
+            { name: "ARTUR NOGUEIRA", drp: "DRP04" },
+            { name: "ATIBAIA", drp: "DRP04" },
+            { name: "POLO FATEC - BRAGANÇA PAULISTA", drp: "DRP04" },
+            { name: "BRAGANÇA PAULISTA", drp: "DRP04" },
+            { name: "CACONDE", drp: "DRP04" },
+            { name: "CAMPINAS", drp: "DRP04" },
+            { name: "CAMPO LIMPO PAULISTA", drp: "DRP04" },
+            { name: "CAPIVARI", drp: "DRP04" },
+            { name: "CASA BRANCA", drp: "DRP04" },
+            { name: "CHARQUEADA", drp: "DRP04" },
+            { name: "CORDEIRÓPOLIS", drp: "DRP04" },
+            { name: "ELIAS FAUSTO", drp: "DRP04" },
+            { name: "ESPÍRITO SANTO DO PINHAL", drp: "DRP04" },
+            { name: "ESTIVA GERBI", drp: "DRP04" },
+            { name: "HOLAMBRA", drp: "DRP04" },
+            { name: "HORTOLÂNDIA", drp: "DRP04" },
+            { name: "POLO FATEC - INDAIATUBA", drp: "DRP04" },
+            { name: "INDAIATUBA", drp: "DRP04" },
+            { name: "IPEÚNA", drp: "DRP04" },
+            { name: "ITAPIRA", drp: "DRP04" },
+            { name: "ITATIBA", drp: "DRP04" },
+            { name: "JAGUARIÚNA", drp: "DRP04" },
+            { name: "LEME", drp: "DRP04" },
+            { name: "LIMEIRA", drp: "DRP04" },
+            { name: "LOUVEIRA", drp: "DRP04" },
+            { name: "POLO FATEC - MOCOCA", drp: "DRP04" },
+            { name: "MOCOCA", drp: "DRP04" },
+            { name: "MOGI MIRIM", drp: "DRP04" },
+            { name: "MORUNGABA", drp: "DRP04" },
+            { name: "PEDREIRA", drp: "DRP04" },
+            { name: "PIRACICABA", drp: "DRP04" },
+            { name: "PIRASSUNUNGA", drp: "DRP04" },
+            { name: "RIO CLARO", drp: "DRP04" },
+            { name: "SALTINHO", drp: "DRP04" },
+            { name: "SANTA BÁRBARA D'OESTE", drp: "DRP04" },
+            { name: "SANTA CRUZ DA CONCEIÇÃO", drp: "DRP04" },
+            { name: "SANTA CRUZ DAS PALMEIRAS", drp: "DRP04" },
+            { name: "SANTA GERTRUDES", drp: "DRP04" },
+            { name: "SÃO JOÃO DA BOA VISTA", drp: "DRP04" },
+            { name: "SÃO JOSÉ DO RIO PARDO", drp: "DRP04" },
+            { name: "SÃO PEDRO", drp: "DRP04" },
+            { name: "SERRA NEGRA", drp: "DRP04" },
+            { name: "SOCORRO", drp: "DRP04" },
+            { name: "SUMARÉ", drp: "DRP04" },
+            { name: "TAMBAÚ", drp: "DRP04" },
+            { name: "TAPIRATIBA", drp: "DRP04" },
+            { name: "TORRINHA", drp: "DRP04" },
+            { name: "VALINHOS", drp: "DRP04" },
+            { name: "VARGEM GRANDE DO SUL", drp: "DRP04" },
+            { name: "AMERICANA", drp: "DRP04" },
+            { name: "BOM JESUS DOS PERDÕES", drp: "DRP04" },
+            { name: "CONCHAL", drp: "DRP04" },
+            { name: "COSMÓPOLIS", drp: "DRP04" },
+            { name: "ENGENHEIRO COELHO", drp: "DRP04" },
+            { name: "ITUPEVA", drp: "DRP04" },
+            { name: "MONTE MOR", drp: "DRP04" },
+            { name: "PIRACAIA", drp: "DRP04" },
+            { name: "RIO DAS PEDRAS", drp: "DRP04" },
+            { name: "VÁRZEA PAULISTA", drp: "DRP04" },
+            { name: "VINHEDO", drp: "DRP04" },
+            { name: "ANALÂNDIA", drp: "DRP04" },
+            { name: "SANTA MARIA DA SERRA", drp: "DRP04" },
+            { name: "ALUMÍNIO", drp: "DRP05" },
+            { name: "ANHEMBI", drp: "DRP05" },
+            { name: "ARAÇARIGUAMA", drp: "DRP05" },
+            { name: "ARAÇOIABA DA SERRA", drp: "DRP05" },
+            { name: "AREIÓPOLIS", drp: "DRP05" },
+            { name: "BOFETE", drp: "DRP05" },
+            { name: "BOTUCATU", drp: "DRP05" },
+            { name: "CABREÚVA", drp: "DRP05" },
+            { name: "CAPELA DO ALTO", drp: "DRP05" },
+            { name: "CERQUILHO", drp: "DRP05" },
+            { name: "CESÁRIO LANGE", drp: "DRP05" },
+            { name: "CONCHAS", drp: "DRP05" },
+            { name: "IBIÚNA", drp: "DRP05" },
+            { name: "IPERÓ", drp: "DRP05" },
+            { name: "ITAPETININGA - UAB", drp: "DRP05" },
+            { name: "ITATINGA", drp: "DRP05" },
+            { name: "ITU", drp: "DRP05" },
+            { name: "POLO FATEC - ITU", drp: "DRP05" },
+            { name: "LARANJAL PAULISTA", drp: "DRP05" },
+            { name: "MAIRINQUE", drp: "DRP05" },
+            { name: "PARDINHO", drp: "DRP05" },
+            { name: "PORANGABA", drp: "DRP05" },
+            { name: "SALTO", drp: "DRP05" },
+            { name: "SALTO DE PIRAPORA", drp: "DRP05" },
+            { name: "SÃO MIGUEL ARCANJO", drp: "DRP05" },
+            { name: "SÃO ROQUE", drp: "DRP05" },
+            { name: "TATUÍ", drp: "DRP05" },
+            { name: "TIETÊ", drp: "DRP05" },
+            { name: "BOITUVA", drp: "DRP05" },
+            { name: "GUAREÍ", drp: "DRP05" },
+            { name: "LENÇÓIS PAULISTA", drp: "DRP05" },
+            { name: "PEREIRAS", drp: "DRP05" },
+            { name: "PILAR DO SUL", drp: "DRP05" },
+            { name: "PORTO FELIZ", drp: "DRP05" },
+            { name: "PRATÂNIA", drp: "DRP05" },
+            { name: "SARAPUÍ", drp: "DRP05" },
+            { name: "SOROCABA", drp: "DRP05" },
+            { name: "VOTORANTIM", drp: "DRP05" },
+            { name: "ALAMBARI", drp: "DRP05" },
+            { name: "APIÁÍ", drp: "DRP06" },
+            { name: "ARANDU", drp: "DRP06" },
+            { name: "AVARÉ", drp: "DRP06" },
+            { name: "BARÃO DE ANTONINA", drp: "DRP06" },
+            { name: "BURI", drp: "DRP06" },
+            { name: "CAPÃO BONITO - PREFEITURA", drp: "DRP06" },
+            { name: "CERQUEIRA CÉSAR", drp: "DRP06" },
+            { name: "FARTURA", drp: "DRP06" },
+            { name: "IPORANGA", drp: "DRP06" },
+            { name: "ITABERÁ", drp: "DRP06" },
+            { name: "ITÁÍ", drp: "DRP06" },
+            { name: "ITAOCA", drp: "DRP06" },
+            { name: "ITAPORANGA", drp: "DRP06" },
+            { name: "ITARARÉ", drp: "DRP06" },
+            { name: "MANDURI", drp: "DRP06" },
+            { name: "PARANAPANEMA", drp: "DRP06" },
+            { name: "TAQUARITUBA", drp: "DRP06" },
+            { name: "ITAPEVA", drp: "DRP06" },
+            { name: "RIBEIRA", drp: "DRP06" },
+            { name: "TAQUARIVAÍ", drp: "DRP06" },
+            { name: "ASSIS", drp: "DRP07" },
+            { name: "BERNARDINO DE CAMPOS", drp: "DRP07" },
+            { name: "CHAVANTES", drp: "DRP07" },
+            { name: "GARÇA", drp: "DRP07" },
+            { name: "HERCULÂNDIA", drp: "DRP07" },
+            { name: "IPAUSSU", drp: "DRP07" },
+            { name: "MARÍLIA", drp: "DRP07" },
+            { name: "OURINHOS", drp: "DRP07" },
+            { name: "POLO FATEC - OURINHOS", drp: "DRP07" },
+            { name: "PALMITAL", drp: "DRP07" },
+            { name: "PARAGUAÇU PAULISTA", drp: "DRP07" },
+            { name: "PARAPUÃ", drp: "DRP07" },
+            { name: "QUATÁ", drp: "DRP07" },
+            { name: "SANTA CRUZ DO RIO PARDO", drp: "DRP07" },
+            { name: "SÃO PEDRO DO TURVO", drp: "DRP07" },
+            { name: "TARUMÃ", drp: "DRP07" },
+            { name: "TUPÃ", drp: "DRP07" },
+            { name: "VERA CRUZ", drp: "DRP07" },
+            { name: "ALVINLANDIA", drp: "DRP07" },
+            { name: "BASTOS", drp: "DRP07" },
+            { name: "MARACAÍ", drp: "DRP07" },
+            { name: "POMPÉIA", drp: "DRP07" },
+            { name: "QUINTANA", drp: "DRP07" },
+            { name: "RINOPOLIS", drp: "DRP07" },
+            { name: "AREALVA", drp: "DRP08" },
+            { name: "BAURU", drp: "DRP08" },
+            { name: "BOCAINA", drp: "DRP08" },
+            { name: "CAFELÂNDIA", drp: "DRP08" },
+            { name: "DOIS CÓRREGOS", drp: "DRP08" },
+            { name: "JAÚ", drp: "DRP08" },
+            { name: "MACATUBA", drp: "DRP08" },
+            { name: "MINEIROS DO TIETÉ", drp: "DRP08" },
+            { name: "PEDERNEIRAS", drp: "DRP08" },
+            { name: "PIRAJUÍ", drp: "DRP08" },
+            { name: "REGINÓPOLIS", drp: "DRP08" },
+            { name: "AGUDOS", drp: "DRP08" },
+            { name: "BARIRI", drp: "DRP08" },
+            { name: "BARRA BONITA", drp: "DRP08" },
+            { name: "IACANGA", drp: "DRP08" },
+            { name: "IGARÁÇU DO TIETÉ", drp: "DRP08" },
+            { name: "ITAU", drp: "DRP08" },
+            { name: "ITAPUÍ", drp: "DRP08" },
+            { name: "LINS", drp: "DRP08" },
+            { name: "PAULISTÂNIA", drp: "DRP08" },
+            { name: "AMÉRICO BRASILIENSE", drp: "DRP09" },
+            { name: "ARARAQUARA", drp: "DRP09" },
+            { name: "BOA ESPERANÇA DO SUL", drp: "DRP09" },
+            { name: "BORBOREMA", drp: "DRP09" },
+            { name: "CÂNDIDO RODRIGUES", drp: "DRP09" },
+            { name: "DOURADO", drp: "DRP09" },
+            { name: "IBITINGA", drp: "DRP09" },
+            { name: "ITÁPOLIS", drp: "DRP09" },
+            { name: "MATÃO", drp: "DRP09" },
+            { name: "MOTUCA", drp: "DRP09" },
+            { name: "RIBEIRÃO BONITO", drp: "DRP09" },
+            { name: "RINCÃO", drp: "DRP09" },
+            { name: "SÃO CARLOS", drp: "DRP09" },
+            { name: "BROTAS", drp: "DRP09" },
+            { name: "GAVIÃO PEIXOTO", drp: "DRP09" },
+            { name: "GUATAPARÁ", drp: "DRP09" },
+            { name: "PORTO FERREIRA", drp: "DRP09" },
+            { name: "TABATINGA", drp: "DRP09" },
+            { name: "FERNANDO PRESTES", drp: "DRP09" },
+            { name: "ALTINÓPOLIS", drp: "DRP10" },
+            { name: "BARRETOS", drp: "DRP10" },
+            { name: "BARRINHA", drp: "DRP10" },
+            { name: "BRODOWSKI", drp: "DRP10" },
+            { name: "CAJOBI", drp: "DRP10" },
+            { name: "COLINA", drp: "DRP10" },
+            { name: "CRAVINHOS", drp: "DRP10" },
+            { name: "FRANCA", drp: "DRP10" },
+            { name: "GUAÍRA", drp: "DRP10" },
+            { name: "GUARACI", drp: "DRP10" },
+            { name: "GUARIBA", drp: "DRP10" },
+            { name: "IGARAPAVA", drp: "DRP10" },
+            { name: "JABORANDI", drp: "DRP10" },
+            { name: "LUIZ ANTÔNIO", drp: "DRP10" },
+            { name: "MIGUELÓPOLIS", drp: "DRP10" },
+            { name: "MORRO AGUDO", drp: "DRP10" },
+            { name: "OLÍMPIA", drp: "DRP10" },
+            { name: "PITANGUEIRAS", drp: "DRP10" },
+            { name: "PONTAL", drp: "DRP10" },
+            { name: "RESTINGA", drp: "DRP10" },
+            { name: "RIBEIRÃO CORRENTE", drp: "DRP10" },
+            { name: "SANTA ROSA DE VITERBO", drp: "DRP10" },
+            { name: "SANTO ANTÔNIO DA ALEGRIA", drp: "DRP10" },
+            { name: "SÃO SIMÃO", drp: "DRP10" },
+            { name: "SERRANA", drp: "DRP10" },
+            { name: "SERTÃOZINHO", drp: "DRP10" },
+            { name: "SEVERÍNIA", drp: "DRP10" },
+            { name: "TAQUARAL", drp: "DRP10" },
+            { name: "TAQUARITINGA", drp: "DRP10" },
+            { name: "VIRADOURO", drp: "DRP10" },
+            { name: "CAJURU", drp: "DRP10" },
+            { name: "CRRISTAIS PAULISTA", drp: "DRP10" },
+            { name: "DUMONT", drp: "DRP10" },
+            { name: "GUARA", drp: "DRP10" },
+            { name: "ITUVERAVA", drp: "DRP10" },
+            { name: "JABOTICABAL", drp: "DRP10" },
+            { name: "MONTE ALTO", drp: "DRP10" },
+            { name: "MONTE AZUL PAULISTA", drp: "DRP10" },
+            { name: "ORLÂNDIA", drp: "DRP10" },
+            { name: "PRADOPOLIS", drp: "DRP10" },
+            { name: "RIBEIRÃO PRETO", drp: "DRP10" },
+            { name: "SANTA CRUZ DA ESPERANÇA", drp: "DRP10" },
+            { name: "BADY BASSITT", drp: "DRP11" },
+            { name: "BÁLSAMO", drp: "DRP11" },
+            { name: "CATANDUVA", drp: "DRP11" },
+            { name: "ESTRELA D'OESTE", drp: "DRP11" },
+            { name: "FERNANDÓPOLIS", drp: "DRP11" },
+            { name: "GUAPIAÇU", drp: "DRP11" },
+            { name: "ICÉM", drp: "DRP11" },
+            { name: "JOSÉ BONIFÁCIO", drp: "DRP11" },
+            { name: "MIRASSOL", drp: "DRP11" },
+            { name: "NOVA GRANADA", drp: "DRP11" },
+            { name: "NOVO HORIZONTE", drp: "DRP11" },
+            { name: "ORINDIÚVA", drp: "DRP11" },
+            { name: "OUROESTE", drp: "DRP11" },
+            { name: "PLANALTO", drp: "DRP11" },
+            { name: "RIOLÂNDIA", drp: "DRP11" },
+            { name: "SALES", drp: "DRP11" },
+            { name: "SEBASTIANÓPOLIS DO SUL", drp: "DRP11" },
+            { name: "VOTUPORANGA", drp: "DRP11" },
+            { name: "IBIRÁ", drp: "DRP11" },
+            { name: "ITAJOBI", drp: "DRP11" },
+            { name: "JALES - UAB", drp: "DRP11" },
+            { name: "NOVAIS", drp: "DRP11" },
+            { name: "PALMARES PAULISTA", drp: "DRP11" },
+            { name: "PAULO DE FARIA", drp: "DRP11" },
+            { name: "SANTA ADÉLIA", drp: "DRP11" },
+            { name: "SÃO JOSÉ DO RIO PRETO", drp: "DRP11" },
+            { name: "URUPÊS", drp: "DRP11" },
+            { name: "ANDRADINA", drp: "DRP12" },
+            { name: "ARAÇATUBA - PREFEITURA", drp: "DRP12" },
+            { name: "BARBOSA", drp: "DRP12" },
+            { name: "BRAÚNA", drp: "DRP12" },
+            { name: "CLEMENTINA", drp: "DRP12" },
+            { name: "GUARARAPES", drp: "DRP12" },
+            { name: "ILHA SOLTEIRA", drp: "DRP12" },
+            { name: "MURUTINGA DO SUL", drp: "DRP12" },
+            { name: "PENÁPOLIS", drp: "DRP12" },
+            { name: "PEREIRA BARRETO", drp: "DRP12" },
+            { name: "PIACATU", drp: "DRP12" },
+            { name: "SUD MENNUCCI", drp: "DRP12" },
+            { name: "VALPARAÍSO", drp: "DRP12" },
+            { name: "SANTÓPOLIS DO AGUAPEÍ", drp: "DRP12" },
+            { name: "SUZANÁPOLIS", drp: "DRP12" },
+            { name: "DRACENA", drp: "DRP13" },
+            { name: "ESTRELA DO NORTE", drp: "DRP13" },
+            { name: "FLORA RICA", drp: "DRP13" },
+            { name: "FLÓRIDA PAULISTA", drp: "DRP13" },
+            { name: "IRAPURU", drp: "DRP13" },
+            { name: "LUCÉLIA", drp: "DRP13" },
+            { name: "MARTINÓPOLIS", drp: "DRP13" },
+            { name: "NANTES", drp: "DRP13" },
+            { name: "NARANDIBA", drp: "DRP13" },
+            { name: "OURO VERDE", drp: "DRP13" },
+            { name: "PACAEMBU", drp: "DRP13" },
+            { name: "PRESIDENTE BERNARDES", drp: "DRP13" },
+            { name: "PRESIDENTE EPITÁCIO", drp: "DRP13" },
+            { name: "PRESIDENTE VENCESLAU", drp: "DRP13" },
+            { name: "RANCHARIA", drp: "DRP13" },
+            { name: "SANDOVALINA", drp: "DRP13" },
+            { name: "SANTO ANASTÁCIO", drp: "DRP13" },
+            { name: "TACIBA", drp: "DRP13" },
+            { name: "TARABAI", drp: "DRP13" },
+            { name: "TEODORO SAMPAIO", drp: "DRP13" },
+            { name: "ADAMANTINA - UAB", drp: "DRP13" },
+            { name: "ÁLVARES MACHADO", drp: "DRP13" },
+            { name: "MIRANTE DO PARANAPANEMA", drp: "DRP13" },
+            { name: "PIRAPOZINHO", drp: "DRP13" },
+            { name: "PRESIDENTE PRUDENTE", drp: "DRP13" },
+            { name: "ROSANA", drp: "DRP13" },
+            { name: "SÃO PAULO - CARRÃO", drp: "DRP14" },
+            { name: "SÃO PAULO - PARQUE DO CARMO", drp: "DRP14" },
+            { name: "SÃO PAULO - PARQUE NOVO MUNDO", drp: "DRP14" },
+            { name: "SÃO PAULO - PINHEIRINHO", drp: "DRP14" },
+            { name: "SÃO PAULO - SÃO PEDRO", drp: "DRP14" },
+            { name: "SÃO PAULO - INÁCIO MONTEIRO", drp: "DRP14" },
+            { name: "SÃO PAULO - ÁGUA AZUL", drp: "DRP14" },
+            { name: "SÃO PAULO - ALTO ALEGRE", drp: "DRP14" },
+            { name: "SÃO PAULO - ALVARENGA", drp: "DRP14" },
+            { name: "SÃO PAULO - ARICANDUVA", drp: "DRP14" },
+            { name: "SÃO PAULO - AZUL DA COR DO MAR", drp: "DRP14" },
+            { name: "SÃO PAULO - BUTANTÃ", drp: "DRP14" },
+            { name: "SÃO PAULO - CAMINHO DO MAR", drp: "DRP14" },
+            { name: "SÃO PAULO - CAMPO LIMPO", drp: "DRP14" },
+            { name: "SÃO PAULO - CANTOS DO AMANHECE", drp: "DRP14" },
+            { name: "SÃO PAULO - CAPÃO REDONDO", drp: "DRP14" },
+            { name: "SÃO PAULO - CASA BLANCA", drp: "DRP14" },
+            { name: "SÃO PAULO - CIDADE DUTRA", drp: "DRP14" },
+            { name: "SÃO PAULO - FEITIÇO DA VILA", drp: "DRP14" },
+            { name: "SÃO PAULO - FORMOSA", drp: "DRP14" },
+            { name: "SÃO PAULO - FREGUESIA DO Ó", drp: "DRP14" },
+            { name: "SÃO PAULO - GUARAPIRANGA", drp: "DRP14" },
+            { name: "SÃO PAULO - HELIÓPOLIS", drp: "DRP14" },
+            { name: "SÃO PAULO - JACANÃ", drp: "DRP14" },
+            { name: "SÃO PAULO - JAGUARÉ", drp: "DRP14" },
+            { name: "SÃO PAULO - JAMBEIRO", drp: "DRP14" },
+            { name: "SÃO PAULO - JARDIM PAULISTANO", drp: "DRP14" },
+            { name: "SÃO PAULO - LAJEADO", drp: "DRP14" },
+            { name: "SÃO PAULO - MENINOS", drp: "DRP14" },
+            { name: "SÃO PAULO - NAVEGANTES", drp: "DRP14" },
+            { name: "SÃO PAULO - PARAISÓPOLIS", drp: "DRP14" },
+            { name: "SÃO PAULO - PARELHEIROS", drp: "DRP14" },
+            { name: "SÃO PAULO - PARQUE ANHANGUERA", drp: "DRP14" },
+            { name: "SÃO PAULO - PARQUE BRISTOL", drp: "DRP14" },
+            { name: "SÃO PAULO - PARQUE SÃO CARLOS", drp: "DRP14" },
+            { name: "SÃO PAULO - PARQUE VEREDAS", drp: "DRP14" },
+            { name: "SÃO PAULO - PAZ", drp: "DRP14" },
+            { name: "SÃO PAULO - PERA MARMELO", drp: "DRP14" },
+            { name: "SÃO PAULO - PERUS", drp: "DRP14" },
+            { name: "SÃO PAULO - QUINTA DO SOL", drp: "DRP14" },
+            { name: "SÃO PAULO - ROSA DA CHINA", drp: "DRP14" },
+            { name: "SÃO PAULO - SÃO MATEUS", drp: "DRP14" },
+            { name: "SÃO PAULO - SÃO RAFAEL", drp: "DRP14" },
+            { name: "SÃO PAULO - SAPOPEMBA", drp: "DRP14" },
+            { name: "SÃO PAULO - TIQUATIRA", drp: "DRP14" },
+            { name: "SÃO PAULO - TRÊS LAGOS", drp: "DRP14" },
+            { name: "SÃO PAULO - TRÊS PONTES", drp: "DRP14" },
+            { name: "SÃO PAULO - UIRAPURU", drp: "DRP14" },
+            { name: "SÃO PAULO - VILA ATLÂNTICA", drp: "DRP14" },
+            { name: "SÃO PAULO - VILA CURUÇÁ", drp: "DRP14" },
+            { name: "SÃO PAULO - VILA DO SOL", drp: "DRP14" },
+            { name: "SÃO PAULO - VILA RUBI", drp: "DRP14" }
+        ];
+
+        // Função para renderizar a lista de polos
+        function renderPoloList(filteredPolos) {
+            const poloList = document.getElementById('poloList');
+            poloList.innerHTML = '';
+
+            filteredPolos.forEach(polo => {
+                const poloItem = document.createElement('div');
+                poloItem.className = 'polo-item';
+                poloItem.innerHTML = `
+                    <div class="polo-name">${polo.name}</div>
+                    <span class="polo-drp">${polo.drp}</span>
+                `;
+                poloList.appendChild(poloItem);
+            });
+
+            document.getElementById('displayCount').textContent = filteredPolos.length;
+        }
+
+        // Inicializar a lista completa
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPoloList(polos);
+            document.getElementById('totalCount').textContent = polos.length;
+            document.getElementById('displayCount').textContent = polos.length;
+
+            // Adicionar funcionalidade de busca
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredPolos = polos.filter(polo =>
+                    polo.name.toLowerCase().includes(searchTerm)
+                );
+                renderPoloList(filteredPolos);
+            });
+
+            // Adicionar funcionalidade de filtro por DRP
+            const drpBadges = document.querySelectorAll('.drp-badge');
+            drpBadges.forEach(badge => {
+                badge.addEventListener('click', function() {
+                    const drp = this.getAttribute('data-drp');
+
+                    // Ativar o badge clicado e desativar os outros
+                    drpBadges.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    if (drp === 'all') {
+                        renderPoloList(polos);
+                    } else {
+                        const filteredPolos = polos.filter(polo => polo.drp === drp);
+                        renderPoloList(filteredPolos);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
