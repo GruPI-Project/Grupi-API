@@ -1,14 +1,37 @@
 import json
+import os
 from django.core.management.base import BaseCommand
 from core.models import Polo, DRP
 
 class Command(BaseCommand):
     help = "Importa polos e DRPs do arquivo polos.json"
 
-    def handle(self, *args, **kwargs):
-        with open(r'/data/polos.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--file',
+            '-f',
+            type=str,
+            default=os.path.join('data', 'polos.json'),
+            help='Caminho para o arquivo polos.json (padrão: data/polos.json relativo ao diretório atual)',
+        )
+            file_path = os.path.abspath(file_path)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            self.stdout.write(self.style.ERROR(f"Arquivo não encontrado: {file_path}"))
+            return
 
+    def handle(self, *args, **options):
+        file_path = options['file']
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            self.stdout.write(self.style.ERROR(f"Arquivo não encontrado: {file_path}"))
+            return
         for entry in data:
             polo_name = entry['name'].strip()
             drp_str = entry['drp'].strip()
