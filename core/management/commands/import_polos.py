@@ -11,16 +11,10 @@ class Command(BaseCommand):
             '--file',
             '-f',
             type=str,
+            # É uma boa prática definir o default aqui.
             default=os.path.join('data', 'polos.json'),
-            help='Caminho para o arquivo polos.json (padrão: data/polos.json relativo ao diretório atual)',
+            help='Caminho para o arquivo polos.json (padrão: data/polos.json)',
         )
-            file_path = os.path.abspath(file_path)
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(f"Arquivo não encontrado: {file_path}"))
-            return
 
     def handle(self, *args, **options):
         file_path = options['file']
@@ -36,6 +30,7 @@ class Command(BaseCommand):
             polo_name = entry['name'].strip()
             drp_str = entry['drp'].strip()
 
+            self.stdout.write(self.style.SUCCESS(f'Criando polo {polo_name} com DRP {drp_str}'))
             # Ignora cabeçalhos inválidos
             if polo_name.upper() == "POLO" or drp_str.upper() == "DRP":
                 continue
@@ -48,6 +43,7 @@ class Command(BaseCommand):
                 continue
 
             # Cria ou busca DRP com número
+            self.stdout.write(self.style.SUCCESS(f'Criado DRP: {drp_num}'))
             drp, created_drp = DRP.objects.get_or_create(numero=drp_num)
 
             # Cria ou busca Polo com DRP relacionado

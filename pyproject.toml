@@ -1,0 +1,23 @@
+[project]
+name = "grupi-project"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "asgiref==3.9.2",
+    "certifi==2025.8.3",
+    "charset-normalizer==3.4.3",
+    "dj-rest-auth==7.0.1",
+    "django==5.2.6",
+    "django-allauth==65.11.2",
+    "django-jazzmin==3.0.1",
+    "django-modeladmin-reorder==0.3.1",
+    "djangorestframework==3.16.1",
+    "djangorestframework-simplejwt==5.5.1",
+    "idna==3.10",
+    "pyjwt==2.10.1",
+    "requests==2.32.5",
+    "sqlparse==0.5.3",
+    "tzdata==2025.2",
+    "urllib3==2.5.0",
+]

@@ -32,6 +32,8 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
+    'admin_reorder',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -63,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
 ]
 
 ROOT_URLCONF = 'GruPI.urls'
@@ -179,3 +182,43 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ADMIN_REORDER = (
+    # Primeiro grupo: "Gerenciamento de Acesso"
+    {
+        'app': 'core',  # A app real dos modelos
+        'label': 'Gerenciamento de Acesso', # O nome que aparecerá no Admin
+        'models': (
+            'core.CustomUser',
+            'core.UserProfile',
+            'core.UserTags',
+            'account.EmailAddress'
+        )
+    },
+
+    # Segundo grupo: "Projetos e Grupos"
+    {
+        'app': 'core',
+        'label': 'Dados dos Grupo de Projetos',
+        'models': (
+            'core.ProjectGroup',
+            'core.Membership',
+            'core.JoinRequest',
+            'core.ProjectGroupTags'
+        )
+    },
+
+    # Terceiro grupo: "Configurações Acadêmicas"
+    {
+        'app': 'core',
+        'label': 'Estrutura Acadêmica',
+        'models': (
+            'core.DRP',
+            'core.Polo',
+            'core.Eixo',
+            'core.Curso',
+            'core.ProjetoIntegrador',
+            'core.Tags'
+        )
+    },
+)
