@@ -1,0 +1,27 @@
+meta {
+  name: Cria grupo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/project-groups/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "meu grupo4",
+    "description": "",
+    "tags": [
+      1,
+      2,
+      3
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Lista membros do grupo
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/project-groups/6/members
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+  }
+}

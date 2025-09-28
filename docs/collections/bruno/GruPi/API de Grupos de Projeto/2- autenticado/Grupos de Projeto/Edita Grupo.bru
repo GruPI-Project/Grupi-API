@@ -1,0 +1,20 @@
+meta {
+  name: Edita Grupo
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/project-groups/6/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    //descomente o item a ser alterado
+    //"name": "",
+    //"description": "Grupo de amantes de Angra"
+    "tags": [1]
+  }
+}
