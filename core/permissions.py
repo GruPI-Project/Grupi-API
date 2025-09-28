@@ -24,10 +24,6 @@ class IsAdminOfGroup(permissions.BasePermission):
         return membership.role == Membership.Role.ADMIN
 
 
-from rest_framework import permissions
-from .models import Membership
-
-
 class CanRemoveMembership(permissions.BasePermission):
     """
     Permissão customizada para remover um membro de um grupo, com as seguintes regras:

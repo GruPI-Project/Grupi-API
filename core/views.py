@@ -102,14 +102,14 @@ class ProjectGroupView(generics.ListCreateAPIView):
             )
 
 class ProjectGroupDetailView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated,IsAdminOfGroup]
+    permission_classes = [IsAuthenticated, IsAdminOfGroup]
     queryset = ProjectGroup.objects.all()
     serializer_class = ProjectGroupSerializer
 
     def get_serializer_class(self):
         if self.request.method == 'PATCH':
             return ProjectGroupUpdateSerializer
-        return  super().get_serializer_class()
+        return super().get_serializer_class()
 
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)

@@ -1,7 +1,6 @@
 # seu_app/serializers.py
 from cProfile import Profile
 
-from allauth.account.internal.userkit import user_email
 from rest_framework import serializers
 from dj_rest_auth.serializers import LoginSerializer
 from dj_rest_auth.registration.serializers import RegisterSerializer
