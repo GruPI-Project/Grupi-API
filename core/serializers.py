@@ -4,7 +4,8 @@ from cProfile import Profile
 from rest_framework import serializers
 from dj_rest_auth.serializers import LoginSerializer
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from .models import CustomUser, UserProfile, ProjetoIntegrador, DRP, Polo, Curso, Eixo, Tags, UserTags
+from .models import CustomUser, UserProfile, ProjetoIntegrador, DRP, Polo, Curso, Eixo, Tags, UserTags, ProjectGroup, \
+    Membership
 from django.db import transaction
 
 
@@ -118,7 +119,6 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
     drp = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
 
-
     class Meta:
         model = UserProfile
         fields = ['id','user', 'polo', 'curso', 'projeto_integrador', 'eixo', 'drp', 'tags']
@@ -181,11 +181,83 @@ class ProjetoIntegradorSerializer(serializers.ModelSerializer):
         fields = ['id', 'numero']
 
 
-#TAGS
-class UserTagSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(read_only=True)
-    tag = TagSerializer(read_only=True)
+#PROJECT-GROUPS
+class MembershipSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
 
     class Meta:
-        model = UserTags
-        fields = ['profile', 'tag']
+        model = Membership
+
+        fields = ['user', 'role']
+
+    def get_user(self, obj):
+        if obj.user:
+            return obj.user.email
+
+class MembershipUserIdSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    class Meta:
+        model = Membership
+        fields = ['user','user_id', 'role']
+
+    def get_user(self, obj):
+        if obj.user:
+            return obj.user.email
+
+class ProjectGroupSerializer(serializers.ModelSerializer):
+
+    creator = serializers.ReadOnlyField(source='creator.email')
+    projeto_integrador = serializers.CharField(read_only=True)
+    drp = serializers.CharField(read_only=True)
+    polo = serializers.CharField(read_only=True)
+    eixo = serializers.StringRelatedField(read_only=True)
+    curso = serializers.StringRelatedField(read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tags.objects.all(),
+        allow_empty=True
+    )
+    #memberships = serializers.SerializerMethodField(read_only=True)
+    memberships = MembershipSerializer(many=True, read_only=True)
+
+    # def get_memberships(self, obj):
+    #     return [membership.user.email for membership in obj.memberships.all()]
+
+    class Meta:
+        model = ProjectGroup
+        fields = [
+            'id',
+            'name',
+            'description',
+            'creator',
+            'projeto_integrador',
+            'drp',
+            'polo',
+            'eixo',
+            'curso',
+            'moderated',
+            'tags',
+            'memberships'
+        ]
+
+    def validate_tags(self, value):
+        if len(value) > 5:
+            raise serializers.ValidationError("Não é possível associar mais de 5 tags a um grupo.")
+        return value
+
+class ProjectGroupUpdateSerializer(serializers.ModelSerializer):
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tags.objects.all(),
+        many=True,
+    )
+
+    class Meta:
+        model = ProjectGroup
+        fields = ['name', 'description','tags']
+
+class ProjectGroupMembersUserIdSerializer(serializers.ModelSerializer):
+    memberships = MembershipUserIdSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProjectGroup
+        fields = ['memberships']

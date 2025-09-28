@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
+from django.contrib.sites.models import Site
+from allauth.account.models import EmailAddress
+from allauth.socialaccount.models import SocialAccount, SocialToken, SocialApp
+from rest_framework.authtoken.models import TokenProxy
 
 from .models import *
 
-
 #Inlines servem para que possamos ver melhor a relacao entre as tabelas
-
-#Inline que avai aparecer no Users permitindo o uso do user profile
 class UserProfileInline(admin.StackedInline):
     """Inline que vai permitir a visualizacao do UserProfile diretamente na pagina do CustonUser"""
     model = UserProfile
@@ -15,7 +17,12 @@ class UserProfileInline(admin.StackedInline):
     fk_name = 'user'
     show_change_link = True
 
-#inlune das tags de usuario permitindo adiciona-las na edicao do profile
+class ProjectGroupTagsInline(admin.StackedInline):
+    model = ProjectGroupTags
+    can_delete = False
+    max_num = 5
+    fk_name = 'project_group'
+
 class UserTagsInline(admin.StackedInline):
     model = UserTags
     can_delete = False
@@ -31,6 +38,11 @@ class JoinRequestInline(admin.StackedInline):
     model = JoinRequest
     can_delete = True
     extra = 1
+
+admin.site.unregister(Group)
+admin.site.unregister(Site)
+admin.site.unregister(TokenProxy)
+admin.site.unregister([SocialAccount, SocialToken, SocialApp])
 
 
 # Melhor visualizacao para a tabela de usuario (aqui que o userprofile inline vai)
@@ -58,7 +70,6 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
-
 #admin.site.register(Eixo)
 @admin.register(Eixo)
 class EixoAdmin(admin.ModelAdmin):
@@ -82,8 +93,8 @@ class ProjetoIntegradorAdmin(admin.ModelAdmin):
 #admin.site.register(DRP)
 @admin.register(DRP)
 class DRPAdmin(admin.ModelAdmin):
-    list_display = ('numero','nome')
-    search_fields = ('numero','nome')
+    list_display = ('numero',)
+    search_fields = ('numero',)
 
 #admin.site.register(Curso)
 @admin.register(Curso)
@@ -107,22 +118,19 @@ class UserProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'curso__polo', 'polo__name')
     #autocomplete_fields = ['user', 'projeto_integrador', 'curso', 'polo', 'drp']
 
-
 #admin.site.register(ProjectGroup)
 @admin.register(ProjectGroup)
 class ProjectGroupAdmin(admin.ModelAdmin):
-    inlines = (MembershipInline, JoinRequestInline, )
-    list_display = ('name', 'projeto_integrador', 'creator', 'join_policy', 'description')
-    list_filter = ('projeto_integrador', 'drp', 'eixo', 'join_policy')
+    inlines = (ProjectGroupTagsInline, MembershipInline, JoinRequestInline, )
+    list_display = ('name', 'projeto_integrador', 'creator', 'moderated', 'description')
+    list_filter = ('projeto_integrador', 'drp', 'eixo', 'moderated')
     search_fields = ('name', 'description', 'creator__email')
-
 
 #admin.site.register(Membership)
 @admin.register(Membership)
 class MembershipAdmin(admin.ModelAdmin):
     list_display = ('user', 'project_group', 'role', 'date_joined')
     search_fields = ('user__email', 'project_group__name')
-    autocomplete_fields = ['project_group', 'user']
 
 #admin.site.register(JoinRequest)
 @admin.register(JoinRequest)
@@ -130,7 +138,6 @@ class JoinRequestAdmin(admin.ModelAdmin):
     list_display = ('user', 'project_group', 'status', 'date_requested')
     list_filter = ('status',)
     search_fields = ('user__email', 'project_group__name')
-    autocomplete_fields = ['project_group', 'user']
 
 #admin.site.register(UserTags)
 @admin.register(UserTags)
@@ -142,4 +149,4 @@ class UserTagsAdmin(admin.ModelAdmin):
 @admin.register(ProjectGroupTags)
 class ProjectGroupTagsAdmin(admin.ModelAdmin):
     list_display = ('project_group', 'tag',)
-    search_fields = ('project_group', 'tag__name')
+    search_fields = ('project_group__name', 'tag__name')

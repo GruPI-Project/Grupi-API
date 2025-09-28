@@ -49,11 +49,6 @@ class DRP(models.Model):
         verbose_name="Numero do DRP",
         validators=[MinValueValidator(1), MaxValueValidator(14)],
     )
-    nome = models.CharField(
-        unique=True,
-        max_length=100,
-        verbose_name="Regioes",
-    )
 
     class Meta:
         ordering = ['numero']
@@ -61,7 +56,7 @@ class DRP(models.Model):
         verbose_name_plural = "DRPs"
 
     def __str__(self):
-        return f"DRP {self.numero} - {self.nome}"
+        return f"DRP {self.numero}"
 
 class Polo(models.Model):
     nome = models.CharField(unique=False, max_length=100)
@@ -70,6 +65,7 @@ class Polo(models.Model):
     class Meta:
         verbose_name = "Polo"
         verbose_name_plural = "Polos"
+        unique_together = ('drp', 'nome')
 
     def __str__(self):
         return self.nome
@@ -111,7 +107,7 @@ class Tags(models.Model):
 class ProjectGroup(models.Model):
     name = models.CharField(unique=True, max_length=150, verbose_name="Nome Do Grupo")
     description = models.TextField(blank=True, null=True, verbose_name="Descricao do Grupo")
-    creator = models.ForeignKey(
+    creator = models.OneToOneField(
         CustomUser,
         #TODO VALIDAR RELATED NAME
         related_name="grupos",
@@ -151,20 +147,18 @@ class ProjectGroup(models.Model):
         blank=True,
     )
 
-    class JoinPolicy(models.TextChoices):
-        OPEN = 'OPEN', 'Aberto'
-        MODERATE = 'MODERATE', 'Moderado'
-
-    join_policy = models.CharField(
-        max_length=20,
-        verbose_name="Politica de entrada",
-        choices=JoinPolicy.choices,
-        default=JoinPolicy.MODERATE
+    tags = models.ManyToManyField(
+        Tags,
+        through='ProjectGroupTags',
+        related_name='grupos'
     )
 
+    moderated = models.BooleanField(default=True, verbose_name="Moderado")
+
     class Meta:
-        verbose_name = "Grupo de PI"
-        verbose_name_plural = "Grupos de PI"
+        verbose_name = "Grupo de Projeto"
+        verbose_name_plural = "Grupos de Projeto"
+
 
     def __str__(self):
         return self.name
@@ -231,6 +225,7 @@ class Membership(models.Model):
         class Meta:
             verbose_name = "Vinculo de Membro"
             verbose_name_plural = "Vinculo de Membros"
+            unique_together = ('user', 'project_group')
 
         def __str__(self):
             return f"{self.user.email} em {self.project_group.name}"
@@ -311,3 +306,10 @@ class ProjectGroupTags(models.Model):
 
     def __str__(self):
         return f"#{self.tag}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            current_tag_count = ProjectGroupTags.objects.filter(project_group=self.project_group).count()
+            if current_tag_count >= 5:
+                raise ValidationError("Limite de 5 tags por grupo atingido.")
+        super().save(*args, **kwargs)
