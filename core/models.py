@@ -7,6 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from .managers import CustomUserManager
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 
 #Modelo de Autenticacao customizado para usar o email
