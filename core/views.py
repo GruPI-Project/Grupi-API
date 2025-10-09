@@ -2,16 +2,15 @@ from django.template.defaulttags import querystring
 from django.http import Http404
 from django.db import transaction
 from rest_framework import generics, serializers, permissions, status
+from drf_spectacular.utils import extend_schema_field, extend_schema, OpenApiResponse
 from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Eixo, Polo, DRP, Curso, ProjetoIntegrador, Tags, UserProfile, UserTags, ProjectGroup, Membership, \
-    CustomUser
-from .permissions import IsAdminOfGroup, CanRemoveMembership
-from .serializers import EixoSerializer, PoloSerializer, DRPSerializer, CursoSerializer, ProjetoIntegradorSerializer, \
-    TagSerializer, UserProfileSerializer, UserProfileDetailSerializer, UserProfileUpdateSerializer, \
-    ProjectGroupSerializer, ProjectGroupUpdateSerializer, ProjectGroupMembersUserIdSerializer
+    CustomUser, JoinRequest
+from .permissions import IsAdminOfGroup, CanRemoveMembership, IsMemberOfGroup
+from .serializers import *
 
 
 class EixoListView(generics.ListAPIView):
@@ -121,11 +120,13 @@ class ProjectGroupDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         return response
 
-class ProjectGroupMembersView(generics.RetrieveDestroyAPIView):
+class ProjectGroupMembersListView(generics.ListAPIView):
+    serializer_class = MembershipUserIdSerializer
     permission_classes = [IsAuthenticated]
-    queryset = ProjectGroup.objects.all()
-    serializer_class = ProjectGroupMembersUserIdSerializer
 
+    def get_queryset(self):
+        group_pk = self.kwargs['group_pk']
+        return Membership.objects.filter(project_group__pk=group_pk)
 
 class ProjectGroupSelfView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
@@ -139,9 +140,9 @@ class ProjectGroupSelfView(generics.RetrieveAPIView):
         except Membership.DoesNotExist:
             raise Http404('Você não faz parte de nenhum grupo.')
 
-
 class MembershipDeleteView(APIView):
     permission_classes = [IsAuthenticated, CanRemoveMembership]
+
 
     def get_object(self, group_pk, user_pk):
         group = get_object_or_404(ProjectGroup, pk=group_pk)
@@ -150,6 +151,17 @@ class MembershipDeleteView(APIView):
         # Retorna o objeto Membership que será o alvo
         return get_object_or_404(Membership, project_group=group, user=user)
 
+    @extend_schema(
+        summary="Remover um Membro do Grupo",
+        description="Permite que um administrador de grupo (ou o próprio usuário, dependendo da permissão) remova um membro de um grupo.",
+        tags=['Ações de Membros'],
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Sucesso. O membro foi removido e não há corpo na resposta."),
+            403: OpenApiResponse(response=MessageResponseSerializer, description="Permissão Negada."),
+            404: OpenApiResponse(description="Não Encontrado. Grupo, usuário ou vínculo de membro não existem."),
+        }
+    )
     def delete(self, request, group_pk, user_pk, format=None):
         membership_to_delete = self.get_object(group_pk, user_pk)
 
@@ -162,8 +174,21 @@ class MembershipDeleteView(APIView):
 class LeaveGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, format=None):
+    @extend_schema(
+        summary="Sair do Grupo Atual",
+        description="Permite que um usuário autenticado saia do grupo ao qual pertence. O administrador não pode usar esta rota.",
+        tags=['Ações de Grupo'],
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Sucesso. O usuário saiu do grupo e não há corpo na resposta."),
+            400: OpenApiResponse(response=MessageResponseSerializer,
+                                 description="Requisição Inválida (usuário não pertence a nenhum grupo)."),
+            403: OpenApiResponse(response=MessageResponseSerializer,
+                                 description="Permissão Negada (administrador tentando sair)."),
+        }
+    )
 
+    def post(self, request, format=None):
         try:
             membership_to_delete = request.user.membership
         except Membership.DoesNotExist:
@@ -181,3 +206,198 @@ class LeaveGroupView(APIView):
 
         membership_to_delete.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class JoinGroupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Entrar ou Solicitar Entrada em um Grupo",
+        description="Permite que um usuário entre diretamente em um grupo aberto ou envie um pedido de entrada para um grupo moderado.",
+        tags=['Ações de Grupo'],
+        request=None,
+        responses={
+            201: OpenApiResponse(response=MessageResponseSerializer, description="Entrada com Sucesso (grupo aberto)."),
+            202: OpenApiResponse(response=MessageResponseSerializer, description="Solicitação Enviada (grupo moderado)."),
+            400: OpenApiResponse(response=MessageResponseSerializer, description="Requisição Inválida (usuário já está em um grupo ou já solicitou)."),
+            404: OpenApiResponse(description="Não Encontrado. O grupo especificado não existe."),
+        }
+    )
+
+    def post(self, request, group_pk, format=None):
+        user = self.request.user
+        group = get_object_or_404(ProjectGroup, pk=group_pk)
+
+        user_is_already_in_a_group = Membership.objects.filter(user=user).exists()
+        if user_is_already_in_a_group:
+            return Response(
+                {'detail': 'Você já faz parte de um grupo e não pode entrar em outro.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user_aready_asked_to_join_this_group = JoinRequest.objects.filter(
+            user=user,
+            project_group=group,
+            status=JoinRequest.Status.PENDING,
+        ).exists()
+        if user_aready_asked_to_join_this_group:
+            return Response(
+                {'detail': 'Você já enviou uma solicitação para entrar neste grupo. Aguarde a aprovação.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        #se o grupo for moderado solicita a entrada criando uma joinrequest pending
+        if group.moderated:
+            JoinRequest.objects.create(
+                user=user,
+                project_group=group,
+                status=JoinRequest.Status.PENDING,
+            )
+            return Response(
+                {'detail': 'Solicitação enviada. Aguarde a aprovação do administrador do grupo.'},
+                status=status.HTTP_202_ACCEPTED
+            )
+        #se o grupo nao for moderado entra direto no grupo (usa transaction para criar os 2 objetos)
+        else:
+            try:
+                with transaction.atomic():
+                    Membership.objects.create(
+                        user=user,
+                        project_group=group,
+                        role=Membership.Role.MEMBER,
+                    )
+                    JoinRequest.objects.create(
+                        user=user,
+                        project_group=group,
+                        status=JoinRequest.Status.APPROVED,
+                    )
+                return Response(
+                    {'detail': 'Você entrou no grupo com sucesso.'},
+                    status=status.HTTP_201_CREATED
+                )
+
+            except IntegrityError:
+                return Response(
+                    {'detail': 'Erro ao entrar no grupo. Tente novamente mais tarde.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+class JoinRequestListView(generics.ListAPIView):
+    """
+    Lista todas as solicitações de entrada pendentes para um grupo específico.
+    """
+    permission_classes = [IsAuthenticated, IsMemberOfGroup]
+    serializer_class = JoinRequestSerializer
+
+    def get_queryset(self):
+        group_pk = self.kwargs['group_pk']
+        group = get_object_or_404(ProjectGroup, pk=group_pk)
+        return JoinRequest.objects.filter(project_group=group, status=JoinRequest.Status.PENDING)
+
+class JoinRequestApproveView(APIView):
+
+    permission_classes = [IsAuthenticated, IsAdminOfGroup]
+
+    @extend_schema(
+        summary="Aprovar um Pedido de Entrada",
+        description="Permite que um administrador de grupo aprove um pedido de entrada pendente. Isso cria um novo vínculo (Membership) e atualiza o status do pedido.",
+        tags=['Ações de Pedidos de Entrada'], # Agrupa endpoints na UI do Swagger
+        request=None, # Informa que o corpo da requisição é vazio
+        responses={
+            200: OpenApiResponse(
+                response=MessageResponseSerializer,
+                description="Sucesso. A solicitação foi aprovada e o usuário agora é um membro."
+            ),
+            400: OpenApiResponse(
+                response=MessageResponseSerializer,
+                description="Requisição Inválida. O usuário já pode ser membro ou a solicitação já foi processada."
+            ),
+            403: OpenApiResponse(
+                response=MessageResponseSerializer,
+                description="Permissão Negada. O usuário não é o administrador do grupo."
+            ),
+            404: OpenApiResponse(
+                description="Não Encontrado. O pedido de entrada com o PK especificado não existe."
+            ),
+        }
+    )
+
+    def post(self, request, request_pk, format=None):
+        join_request = get_object_or_404(JoinRequest, pk=request_pk)
+
+        self.check_object_permissions(self.request, join_request.project_group)
+
+        user = join_request.user
+        group = join_request.project_group
+
+        #se um user ja estiver em um grupo rejeita a solicitação automaticamente
+        user_is_already_in_a_group = Membership.objects.filter(user=user).exists()
+        if user_is_already_in_a_group:
+            join_request.status = JoinRequest.Status.REJECTED
+            join_request.save()
+            return Response(
+                {'detail': 'O usuário já faz parte de outro grupo. A solicitação foi rejeitada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with transaction.atomic():
+                Membership.objects.create(
+                    user=user,
+                    project_group=group,
+                    role=Membership.Role.MEMBER,
+                )
+                join_request.status = JoinRequest.Status.APPROVED
+                join_request.save()
+
+            return Response(
+                {'detail': 'Solicitação aprovada. O usuário agora é membro do grupo.'},
+                status=status.HTTP_200_OK
+            )
+
+        except IntegrityError:
+            return Response(
+                {'detail': 'Erro ao aprovar a solicitação. Tente novamente mais tarde.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+class JoinRequestRejectView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOfGroup]
+
+    @extend_schema(
+        summary="Rejeitar um Pedido de Entrada",
+        description="Permite que o administrador de um grupo rejeite um pedido de entrada pendente.",
+        tags=['Ações de Pedidos de Entrada'],
+        request=None,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="Sucesso. Solicitação rejeitada."),
+            400: OpenApiResponse(response=MessageResponseSerializer, description="Requisição Inválida (ex: pedido já processado)."),
+            403: OpenApiResponse(response=MessageResponseSerializer, description="Permissão Negada."),
+            404: OpenApiResponse(description="Não Encontrado. Pedido de entrada não existe."),
+        }
+    )
+    def post(self, request, request_pk, format=None):
+        join_request = get_object_or_404(JoinRequest, pk=request_pk)
+
+        self.check_object_permissions(self.request, join_request.project_group)
+
+        # se a solicitação já foi processada, retorna erro
+        if join_request.status != JoinRequest.Status.PENDING:
+            return Response(
+                {'detail': 'Esta solicitação já foi processada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        join_request.status = JoinRequest.Status.REJECTED
+        join_request.save()
+
+        return Response(
+            {'detail': 'Solicitação rejeitada com sucesso.'},
+            status=status.HTTP_200_OK
+        )
+
+class JoinRequestSelfView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = JoinRequestSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return JoinRequest.objects.filter(user=user)

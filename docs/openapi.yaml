@@ -1,0 +1,1325 @@
+openapi: 3.0.3
+
+info:
+  title: GruPI - API de Grupos de Projeto
+  description: |-
+    API para plataforma de formação de grupos de projeto acadêmico da UNIVESP.
+    Permite que usuários se cadastrem, criem perfis, encontrem grupos compatíveis 
+    com base em critérios acadêmicos (Polo, DRP, Curso, Eixo, PI) e gerenciem 
+    sua participação em grupos de projeto.
+    
+    **Recursos principais:**
+    - Autenticação via JWT (dj-rest-auth)
+    - Gestão de perfil de usuário com tags de habilidades
+    - Criação e gerenciamento de grupos de projeto
+    - Sistema de membros com roles (ADMIN/MEMBER)
+    - Dados acadêmicos (Eixos, Cursos, DRPs, Polos, PIs)
+
+  version: 1.0.1
+  contact:
+    name: Equipe de Desenvolvimento GruPI
+    email: dev@grupi.com
+
+servers:
+  - url: http://127.0.0.1:8000/
+    description: Servidor de Desenvolvimento Local
+  - url: https://api.grupi.com/
+    description: Servidor de Produção
+
+tags:
+  - name: Autenticação
+    description: Registro, login, logout e refresh de tokens JWT
+  - name: Perfil de Usuário
+    description: Gerenciamento de perfis de usuário e tags de habilidades
+  - name: Grupos de Projeto
+    description: CRUD de grupos de projeto e gerenciamento de membros
+  - name: Pedidos de Entrada
+    description: Gerenciamento de pedidos de entrada em grupos moderados
+  - name: Dados Acadêmicos
+    description: Lookups de dados acadêmicos (Eixos, Cursos, DRPs, Polos, PIs, Tags)
+
+paths:
+  # ==========================================
+  # AUTENTICAÇÃO
+  # ==========================================
+
+  /auth/registration/:
+    post:
+      tags: [Autenticação]
+      summary: Registrar novo usuário
+      description: Cria uma nova conta de usuário e seu perfil acadêmico associado
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/login/:
+    post:
+      tags: [Autenticação]
+      summary: Login de usuário
+      description: Autentica um usuário e retorna tokens JWT
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout/:
+    post:
+      tags: [Autenticação]
+      summary: Logout de usuário
+      description: Invalida o token de refresh do usuário autenticado
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Successfully logged out."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/token/refresh/:
+    post:
+      tags: [Autenticação]
+      summary: Renovar access token
+      description: Renova o access token usando o refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh
+              properties:
+                refresh:
+                  type: string
+                  description: Refresh token
+      responses:
+        '200':
+          description: Token renovado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                  refresh:
+                    type: string
+        '401':
+          description: Token inválido ou expirado
+
+  /auth/user/:
+    get:
+      tags: [Autenticação]
+      summary: Obter dados do usuário autenticado
+      description: Retorna informações básicas e perfil do usuário logado
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dados do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # PERFIL DE USUÁRIO
+  # ==========================================
+
+  /profiles/me/:
+    get:
+      tags: [Perfil de Usuário]
+      summary: Obter perfil próprio
+      description: Retorna o perfil completo do usuário autenticado
+      operationId: getOwnProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags: [Perfil de Usuário]
+      summary: Atualizar perfil próprio
+      description: Atualiza polo, curso, PI e tags do perfil do usuário
+      operationId: updateOwnProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdate'
+      responses:
+        '200':
+          description: Perfil atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDetail'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /profiles/{user_pk}/:
+    get:
+      tags: [Perfil de Usuário]
+      summary: Obter perfil de outro usuário
+      description: Retorna o perfil de um usuário específico pelo ID
+      operationId: getUserProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_pk
+          in: path
+          required: true
+          description: UUID do usuário
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDetail'
+        '404':
+          description: Usuário não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /profiles/me/tags/:
+    get:
+      tags: [Perfil de Usuário]
+      summary: Listar tags do usuário
+      description: Retorna todas as tags associadas ao perfil do usuário autenticado
+      operationId: getOwnTags
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # GRUPOS DE PROJETO
+  # ==========================================
+
+  /project-groups/:
+    get:
+      tags: [Grupos de Projeto]
+      summary: Listar grupos de projeto
+      description: Retorna lista de todos os grupos de projeto
+      operationId: listProjectGroups
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de grupos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectGroup'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Grupos de Projeto]
+      summary: Criar grupo de projeto
+      description: |-
+        Cria um novo grupo de projeto. O usuário autenticado será o criador 
+        e admin do grupo. Informações acadêmicas (PI, DRP, Polo, Eixo, Curso) 
+        são herdadas automaticamente do perfil do criador.
+        
+        **Validações:**
+        - Usuário não pode estar em outro grupo
+        - Máximo de 5 tags por grupo
+      operationId: createProjectGroup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectGroupCreate'
+      responses:
+        '201':
+          description: Grupo criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectGroup'
+        '400':
+          description: Erro de validação (usuário já em grupo, etc)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /project-groups/me/:
+    get:
+      tags: [Grupos de Projeto]
+      summary: Obter grupo do usuário
+      description: Retorna o grupo de projeto do qual o usuário faz parte
+      operationId: getOwnProjectGroup
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grupo do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectGroup'
+        '404':
+          description: Usuário não faz parte de nenhum grupo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Você não faz parte de nenhum grupo."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /project-groups/{pk}/:
+    get:
+      tags: [Grupos de Projeto]
+      summary: Obter detalhes de um grupo
+      description: Retorna informações completas de um grupo específico
+      operationId: getProjectGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do grupo
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalhes do grupo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectGroup'
+        '404':
+          description: Grupo não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags: [Grupos de Projeto]
+      summary: Atualizar grupo
+      description: |-
+        Atualiza nome, descrição e tags do grupo.
+        
+        **Permissões:** Apenas o admin do grupo pode atualizar
+      operationId: updateProjectGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do grupo
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectGroupUpdate'
+      responses:
+        '200':
+          description: Grupo atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectGroup'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '403':
+          description: Sem permissão (não é admin do grupo)
+        '404':
+          description: Grupo não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Grupos de Projeto]
+      summary: Deletar grupo
+      description: |-
+        Remove o grupo de projeto.
+        
+        **Permissões:** Apenas o admin do grupo pode deletar
+      operationId: deleteProjectGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do grupo
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Grupo deletado com sucesso
+        '403':
+          description: Sem permissão (não é admin do grupo)
+        '404':
+          description: Grupo não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /project-groups/{pk}/join/:
+    post:
+      tags: [Grupos de Projeto]
+      summary: Solicitar entrada em grupo
+      description: |-
+        Permite que um usuário solicite entrada em um grupo de projeto.
+        
+        **Comportamento:**
+        - Se o grupo não for moderado, o usuário entra imediatamente
+        - Se o grupo for moderado, cria um pedido de entrada pendente
+        
+        **Validações:**
+        - Usuário não pode estar em outro grupo
+        - Grupo deve existir e estar ativo
+      operationId: joinProjectGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do grupo
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Entrou no grupo com sucesso (grupo não moderado)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Você entrou no grupo com sucesso."
+        '201':
+          description: Pedido de entrada criado (grupo moderado)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinRequest'
+        '400':
+          description: Usuário já está em um grupo ou já tem pedido pendente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Grupo não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /project-groups/{pk}/members/:
+    get:
+      tags: [Grupos de Projeto]
+      summary: Listar membros do grupo
+      description: Retorna lista de membros do grupo com seus IDs de usuário e roles
+      operationId: getProjectGroupMembers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do grupo
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de membros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memberships:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MembershipWithUserId'
+        '404':
+          description: Grupo não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /project-groups/{group_pk}/members/{user_pk}/:
+    delete:
+      tags: [Grupos de Projeto]
+      summary: Remover membro do grupo
+      description: |-
+        Remove um membro específico do grupo.
+        
+        **Permissões:** 
+        - Admin do grupo pode remover qualquer membro
+        - Membro pode se remover (auto-remoção)
+      operationId: removeMemberFromGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: group_pk
+          in: path
+          required: true
+          description: ID do grupo
+          schema:
+            type: integer
+        - name: user_pk
+          in: path
+          required: true
+          description: UUID do usuário a ser removido
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Membro removido com sucesso
+        '403':
+          description: Sem permissão para remover este membro
+        '404':
+          description: Grupo, usuário ou membership não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # PEDIDOS DE ENTRADA
+  # ==========================================
+
+  /join-requests/:
+    get:
+      tags: [Pedidos de Entrada]
+      summary: Listar pedidos de entrada do grupo
+      description: |-
+        Retorna todos os pedidos de entrada pendentes para o grupo do usuário autenticado.
+        
+        **Permissões:** Apenas admins de grupos podem ver pedidos
+      operationId: listJoinRequests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de pedidos de entrada
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JoinRequest'
+        '403':
+          description: Usuário não é admin de nenhum grupo
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /join-requests/me/:
+    get:
+      tags: [Pedidos de Entrada]
+      summary: Obter pedido de entrada próprio
+      description: Retorna o pedido de entrada pendente do usuário autenticado, se existir
+      operationId: getOwnJoinRequest
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pedido de entrada do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinRequest'
+        '404':
+          description: Usuário não tem pedido de entrada pendente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Você não tem nenhum pedido de entrada pendente."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /join-requests/{pk}/approve/:
+    post:
+      tags: [Pedidos de Entrada]
+      summary: Aprovar pedido de entrada
+      description: |-
+        Aprova um pedido de entrada, adicionando o usuário ao grupo.
+        
+        **Permissões:** Apenas o admin do grupo pode aprovar
+      operationId: approveJoinRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do pedido de entrada
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pedido aprovado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Pedido aprovado com sucesso."
+                  join_request:
+                    $ref: '#/components/schemas/JoinRequest'
+        '400':
+          description: Pedido já foi processado ou usuário já está em grupo
+        '403':
+          description: Sem permissão para aprovar este pedido
+        '404':
+          description: Pedido não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /join-requests/{pk}/reject/:
+    post:
+      tags: [Pedidos de Entrada]
+      summary: Rejeitar pedido de entrada
+      description: |-
+        Rejeita um pedido de entrada.
+        
+        **Permissões:** Apenas o admin do grupo pode rejeitar
+      operationId: rejectJoinRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          description: ID do pedido de entrada
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pedido rejeitado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Pedido rejeitado com sucesso."
+                  join_request:
+                    $ref: '#/components/schemas/JoinRequest'
+        '400':
+          description: Pedido já foi processado
+        '403':
+          description: Sem permissão para rejeitar este pedido
+        '404':
+          description: Pedido não encontrado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # AÇÕES DE NÍVEL SUPERIOR
+  # ==========================================
+
+  /leave-group/:
+    post:
+      tags: [Grupos de Projeto]
+      summary: Sair do grupo
+      description: |-
+        Remove o usuário autenticado do grupo atual.
+        
+        **Validações:**
+        - Usuário deve fazer parte de um grupo
+        - Admin/criador não pode sair (deve deletar o grupo)
+      operationId: leaveGroup
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Saiu do grupo com sucesso
+        '400':
+          description: Usuário não faz parte de nenhum grupo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin não pode sair do grupo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "O administrador não pode sair do grupo. O grupo deve ser deletado."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # DADOS ACADÊMICOS (LOOKUPS)
+  # ==========================================
+
+  /eixos/:
+    get:
+      tags: [Dados Acadêmicos]
+      summary: Listar eixos
+      description: Retorna lista de todos os eixos acadêmicos
+      operationId: listEixos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de eixos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Eixo'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /cursos/:
+    get:
+      tags: [Dados Acadêmicos]
+      summary: Listar cursos
+      description: Retorna lista de todos os cursos com seus eixos
+      operationId: listCursos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de cursos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Curso'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /drps/:
+    get:
+      tags: [Dados Acadêmicos]
+      summary: Listar DRPs
+      description: Retorna lista de todas as Diretorias Regionais de Polo (DRP 1-14)
+      operationId: listDRPs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de DRPs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DRP'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /polos/:
+    get:
+      tags: [Dados Acadêmicos]
+      summary: Listar polos
+      description: Retorna lista de todos os polos presenciais com suas DRPs
+      operationId: listPolos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de polos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Polo'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /pis/:
+    get:
+      tags: [Dados Acadêmicos]
+      summary: Listar Projetos Integradores
+      description: Retorna lista de Projetos Integradores (PI 1-6)
+      operationId: listPIs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de PIs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjetoIntegrador'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /tags/:
+    get:
+      tags: [Dados Acadêmicos]
+      summary: Listar tags
+      description: Retorna lista de todas as tags de habilidades/interesses disponíveis
+      operationId: listTags
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+# ==========================================
+# COMPONENTES REUTILIZÁVEIS
+# ==========================================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtido via login ou registro
+
+  responses:
+    UnauthorizedError:
+      description: Token de autenticação ausente ou inválido
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "As credenciais de autenticação não foram fornecidas."
+
+  schemas:
+    # --- Autenticação ---
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password1
+        - password2
+        - first_name
+        - last_name
+        - projeto_integrador
+        - drp
+        - polo
+        - curso
+      properties:
+        email:
+          type: string
+          format: email
+          example: "joao.silva@aluno.univesp.br"
+        password1:
+          type: string
+          format: password
+          minLength: 8
+          example: "senhaSegura123"
+        password2:
+          type: string
+          format: password
+          description: Confirmação da senha
+          example: "senhaSegura123"
+        first_name:
+          type: string
+          maxLength: 150
+          example: "João"
+        last_name:
+          type: string
+          maxLength: 150
+          example: "Silva"
+        projeto_integrador:
+          type: integer
+          description: ID do Projeto Integrador (1-6)
+          example: 3
+        drp:
+          type: integer
+          description: ID da DRP (1-14)
+          example: 5
+        polo:
+          type: integer
+          description: ID do Polo
+          example: 42
+        curso:
+          type: integer
+          description: ID do Curso
+          example: 7
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "joao.silva@aluno.univesp.br"
+        password:
+          type: string
+          format: password
+          example: "senhaSegura123"
+
+    TokenResponse:
+      type: object
+      properties:
+        access:
+          type: string
+          description: JWT access token (válido por curto período)
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+        refresh:
+          type: string
+          description: JWT refresh token (válido por período longo)
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+        user:
+          $ref: '#/components/schemas/UserDetails'
+
+    UserDetails:
+      type: object
+      properties:
+        pk:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "joao.silva@aluno.univesp.br"
+        first_name:
+          type: string
+          example: "João"
+        last_name:
+          type: string
+          example: "Silva"
+        profile:
+          $ref: '#/components/schemas/UserProfileBasic'
+
+    # --- Perfil ---
+
+    UserProfileBasic:
+      type: object
+      properties:
+        polo:
+          type: string
+          example: "Santos"
+        curso:
+          type: string
+          example: "Engenharia da Computação"
+        projeto_integrador:
+          type: string
+          example: "PI 3"
+        eixo:
+          type: string
+          example: "Computação e Informática"
+        drp:
+          type: string
+          example: "DRP 5"
+
+    UserProfileDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user:
+          type: object
+          properties:
+            pk:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            first_name:
+              type: string
+            last_name:
+              type: string
+        polo:
+          type: string
+          example: "Santos"
+        curso:
+          type: string
+          example: "Engenharia da Computação"
+        projeto_integrador:
+          type: string
+          example: "PI 3"
+        eixo:
+          type: string
+          example: "Computação e Informática"
+        drp:
+          type: string
+          example: "DRP 5"
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        polo:
+          type: integer
+          description: ID do novo polo
+          example: 42
+        curso:
+          type: integer
+          description: ID do novo curso
+          example: 7
+        projeto_integrador:
+          type: integer
+          description: ID do novo PI
+          example: 3
+        tags:
+          type: array
+          maxItems: 5
+          description: Lista de IDs de tags (máximo 5)
+          items:
+            type: integer
+          example: [1, 5, 12, 23, 34]
+
+    # --- Grupos de Projeto ---
+
+    ProjectGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: "Grupo de Sistemas Embarcados"
+        description:
+          type: string
+          example: "Grupo focado em desenvolvimento de sistemas embarcados para IoT"
+        creator:
+          type: string
+          format: email
+          description: Email do criador do grupo
+          example: "joao.silva@aluno.univesp.br"
+        projeto_integrador:
+          type: string
+          example: "PI 3"
+        drp:
+          type: string
+          example: "DRP 5"
+        polo:
+          type: string
+          example: "Santos"
+        eixo:
+          type: string
+          example: "Computação e Informática"
+        curso:
+          type: string
+          example: "Engenharia da Computação"
+        moderated:
+          type: boolean
+          description: Se o grupo é moderado (requer aprovação para entrar)
+          example: true
+        tags:
+          type: array
+          items:
+            type: integer
+          example: [1, 5, 12]
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+
+    ProjectGroupCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 150
+          example: "Grupo de Sistemas Embarcados"
+        description:
+          type: string
+          example: "Grupo focado em desenvolvimento de sistemas embarcados para IoT"
+        tags:
+          type: array
+          maxItems: 5
+          description: Lista de IDs de tags (máximo 5)
+          items:
+            type: integer
+          example: [1, 5, 12]
+
+    ProjectGroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+          example: "Grupo de IoT e Embarcados"
+        description:
+          type: string
+          example: "Descrição atualizada do grupo"
+        tags:
+          type: array
+          maxItems: 5
+          items:
+            type: integer
+          example: [1, 5, 12, 23]
+
+    Membership:
+      type: object
+      properties:
+        user:
+          type: string
+          format: email
+          description: Email do membro
+          example: "maria.santos@aluno.univesp.br"
+        role:
+          type: string
+          enum: [ADMIN, MEMBER]
+          example: "MEMBER"
+
+    MembershipWithUserId:
+      type: object
+      properties:
+        user:
+          type: string
+          format: email
+          description: Email do membro
+          example: "maria.santos@aluno.univesp.br"
+        user_id:
+          type: string
+          format: uuid
+          description: UUID do membro
+          example: "660e8400-e29b-41d4-a716-446655440000"
+        role:
+          type: string
+          enum: [ADMIN, MEMBER]
+          example: "MEMBER"
+
+    # --- Pedidos de Entrada ---
+
+    JoinRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 15
+        user:
+          type: string
+          format: email
+          description: Email do usuário que solicitou entrada
+          example: "maria.santos@aluno.univesp.br"
+        project_group:
+          type: string
+          description: Nome do grupo
+          example: "Grupo de Sistemas Embarcados"
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+          description: Status do pedido de entrada
+          example: "PENDING"
+        created_at:
+          type: string
+          format: date-time
+          description: Data e hora da criação do pedido
+          example: "2025-10-08T14:30:00Z"
+
+    # --- Dados Acadêmicos ---
+
+    Eixo:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: "Computação e Informática"
+
+    Curso:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 7
+        nome:
+          type: string
+          example: "Engenharia da Computação"
+        eixo:
+          $ref: '#/components/schemas/Eixo'
+
+    DRP:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        numero:
+          type: integer
+          minimum: 1
+          maximum: 14
+          example: 5
+
+    Polo:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        nome:
+          type: string
+          example: "Santos"
+        drp:
+          $ref: '#/components/schemas/DRP'
+
+    ProjetoIntegrador:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        numero:
+          type: integer
+          minimum: 1
+          maximum: 6
+          example: 3
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        name:
+          type: string
+          example: "Python"
+
+    # --- Erros ---
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Erro genérico"
+
+    ValidationError:
+      type: object
+      properties:
+        field_name:
+          type: array
+          items:
+            type: string
+          example: ["Este campo é obrigatório."]
+      additionalProperties:
+        type: array
+        items:
+          type: string
+
+security:
+  - bearerAuth: []
