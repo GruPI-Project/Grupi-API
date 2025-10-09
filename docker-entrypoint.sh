@@ -28,6 +28,8 @@ END
 echo "Run settings debug command..."
 python manage.py check_settings
 
+
+echo "\n Importing polos..."
 python manage.py import_polos
 
 echo "Starting Gunicorn..."
