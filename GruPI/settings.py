@@ -63,6 +63,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -164,6 +165,7 @@ sua participação em grupos de projeto.
     },
     'SERVERS': [
         {'url': 'http://127.0.0.1:8000', 'description': 'Servidor de Desenvolvimento Local'},
+        {'url': 'https://api.grupi-dev.pavops.net', 'description': 'Servidor de Desenvolvimento'},
         {'url': 'https://api.grupi.pavops.net', 'description': 'Servidor de Produção'},
     ],
     'COMPONENT_SPLIT_REQUEST': True,
@@ -223,6 +225,24 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# ==========================================
+# CONFIGURAÇÕES DO WHITENOISE
+# ==========================================
+
+# Habilita compressão e cache de arquivos estáticos
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Configurações adicionais do WhiteNoise
+WHITENOISE_MAX_AGE = 31536000  # Cache por 1 ano em produção
+WHITENOISE_AUTOREFRESH = DEBUG  # Auto-refresh apenas em desenvolvimento
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

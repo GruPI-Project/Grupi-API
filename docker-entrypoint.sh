@@ -7,10 +7,10 @@ echo "Activating virtual environment..."
 source .venv/bin/activate
 
 echo "Running migrations..."
-uv run manage.py migrate --noinput
+python manage.py migrate --noinput
 
 echo "Creating superuser if needed..."
-uv run manage.py shell << END
+python manage.py shell << END
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(email='admin@grupi.pavops.net').exists():
@@ -25,6 +25,7 @@ else:
     print('Superuser already exists')
 END
 
+echo "Environment variables:"
 env | grep DJANGO_
 
 echo "Starting Gunicorn..."
@@ -35,4 +36,3 @@ exec gunicorn GruPI.wsgi:application \
     --access-logfile - \
     --error-logfile - \
     --log-level info
-
