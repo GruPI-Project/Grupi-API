@@ -3,11 +3,14 @@
 # Exit on error
 set -e
 
+echo "Activating virtual environment..."
+source .venv/bin/activate
+
 echo "Running migrations..."
-python manage.py migrate --noinput
+uv run manage.py migrate --noinput
 
 echo "Creating superuser if needed..."
-python manage.py shell << END
+uv run manage.py shell << END
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(email='admin@grupi.pavops.net').exists():
