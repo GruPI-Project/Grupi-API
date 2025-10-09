@@ -25,6 +25,8 @@ else:
     print('Superuser already exists')
 END
 
+env | grep DJANGO_
+
 echo "Starting Gunicorn..."
 exec gunicorn GruPI.wsgi:application \
     --bind 0.0.0.0:3000 \
