@@ -31,9 +31,6 @@ RUN uv add gunicorn
 # Copiar o projeto
 COPY . .
 
-# Coletar arquivos estáticos (WhiteNoise vai comprimir e adicionar hash)
-RUN uv run manage.py collectstatic --noinput
-
 # Criar diretório para o banco de dados SQLite (se usado)
 RUN mkdir -p /app/data
 
