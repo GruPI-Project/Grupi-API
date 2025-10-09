@@ -402,8 +402,10 @@ paths:
   /api/v1/cursos/:
     get:
       operationId: cursos_list
+      description: Retorna lista de todos os cursos com seus eixos.
+      summary: Listar cursos
       tags:
-      - cursos
+      - Dados Acadêmicos
       security:
       - jwtAuth: []
       responses:
@@ -418,8 +420,10 @@ paths:
   /api/v1/drps/:
     get:
       operationId: drps_list
+      description: Retorna lista de todas as Diretorias Regionais de Polo (DRP 1-14).
+      summary: Listar DRPs
       tags:
-      - drps
+      - Dados Acadêmicos
       security:
       - jwtAuth: []
       responses:
@@ -434,8 +438,10 @@ paths:
   /api/v1/eixos/:
     get:
       operationId: eixos_list
+      description: Retorna lista de todos os eixos acadêmicos disponíveis.
+      summary: Listar eixos
       tags:
-      - eixos
+      - Dados Acadêmicos
       security:
       - jwtAuth: []
       responses:
@@ -450,10 +456,20 @@ paths:
   /api/v1/join-requests/:
     get:
       operationId: join_requests_list
-      description: Lista todas as solicitações de entrada pendentes para um grupo
-        específico.
+      description: |-
+        Retorna todos os pedidos de entrada pendentes para o grupo do usuário autenticado.
+
+        **Permissões:** Apenas admins de grupos podem ver pedidos
+      summary: Listar pedidos de entrada do grupo
+      parameters:
+      - in: path
+        name: group_pk
+        schema:
+          type: integer
+        description: ID do grupo
+        required: true
       tags:
-      - join-requests
+      - Pedidos de Entrada
       security:
       - jwtAuth: []
       responses:
@@ -465,20 +481,30 @@ paths:
                 items:
                   $ref: '#/components/schemas/JoinRequest'
           description: ''
+        '403':
+          description: Usuário não é admin de nenhum grupo
   /api/v1/join-requests/{id}/approve/:
     post:
       operationId: join_requests_approve_create
-      description: Permite que um administrador de grupo aprove um pedido de entrada
-        pendente. Isso cria um novo vínculo (Membership) e atualiza o status do pedido.
-      summary: Aprovar um Pedido de Entrada
+      description: |-
+        Aprova um pedido de entrada, adicionando o usuário ao grupo.
+
+        **Permissões:** Apenas o admin do grupo pode aprovar
+      summary: Aprovar pedido de entrada
       parameters:
       - in: path
         name: id
         schema:
           type: integer
         required: true
+      - in: path
+        name: request_pk
+        schema:
+          type: integer
+        description: ID do pedido de entrada
+        required: true
       tags:
-      - Ações de Pedidos de Entrada
+      - Pedidos de Entrada
       security:
       - jwtAuth: []
       responses:
@@ -487,38 +513,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Sucesso. A solicitação foi aprovada e o usuário agora é um
-            membro.
+          description: Pedido aprovado com sucesso
         '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Requisição Inválida. O usuário já pode ser membro ou a solicitação
-            já foi processada.
+          description: Pedido já foi processado ou usuário já está em grupo
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Permissão Negada. O usuário não é o administrador do grupo.
+          description: Sem permissão para aprovar este pedido
         '404':
-          description: Não Encontrado. O pedido de entrada com o PK especificado não
-            existe.
+          description: Pedido não encontrado
   /api/v1/join-requests/{id}/reject/:
     post:
       operationId: join_requests_reject_create
-      description: Permite que o administrador de um grupo rejeite um pedido de entrada
-        pendente.
-      summary: Rejeitar um Pedido de Entrada
+      description: |-
+        Rejeita um pedido de entrada.
+
+        **Permissões:** Apenas o admin do grupo pode rejeitar
+      summary: Rejeitar pedido de entrada
       parameters:
       - in: path
         name: id
         schema:
           type: integer
         required: true
+      - in: path
+        name: request_pk
+        schema:
+          type: integer
+        description: ID do pedido de entrada
+        required: true
       tags:
-      - Ações de Pedidos de Entrada
+      - Pedidos de Entrada
       security:
       - jwtAuth: []
       responses:
@@ -527,26 +558,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Sucesso. Solicitação rejeitada.
+          description: Pedido rejeitado com sucesso
         '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: 'Requisição Inválida (ex: pedido já processado).'
+          description: Pedido já foi processado
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Permissão Negada.
+          description: Sem permissão para rejeitar este pedido
         '404':
-          description: Não Encontrado. Pedido de entrada não existe.
+          description: Pedido não encontrado
   /api/v1/join-requests/me/:
     get:
       operationId: join_requests_me_list
+      description: Retorna todos os pedidos de entrada do usuário autenticado.
+      summary: Obter pedidos de entrada próprios
       tags:
-      - join-requests
+      - Pedidos de Entrada
       security:
       - jwtAuth: []
       responses:
@@ -558,36 +591,44 @@ paths:
                 items:
                   $ref: '#/components/schemas/JoinRequest'
           description: ''
+        '404':
+          description: Usuário não tem pedidos de entrada
   /api/v1/leave-group/:
     post:
       operationId: leave_group_create
-      description: Permite que um usuário autenticado saia do grupo ao qual pertence.
-        O administrador não pode usar esta rota.
-      summary: Sair do Grupo Atual
+      description: |-
+        Remove o usuário autenticado do grupo atual.
+
+        **Validações:**
+        - Usuário deve fazer parte de um grupo
+        - Admin/criador não pode sair (deve deletar o grupo)
+      summary: Sair do grupo
       tags:
-      - Ações de Grupo
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
         '204':
-          description: Sucesso. O usuário saiu do grupo e não há corpo na resposta.
+          description: Saiu do grupo com sucesso
         '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Requisição Inválida (usuário não pertence a nenhum grupo).
+          description: Usuário não faz parte de nenhum grupo
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Permissão Negada (administrador tentando sair).
+          description: Admin não pode sair do grupo
   /api/v1/pis/:
     get:
       operationId: pis_list
+      description: Retorna lista de Projetos Integradores (PI 1-6).
+      summary: Listar Projetos Integradores
       tags:
-      - pis
+      - Dados Acadêmicos
       security:
       - jwtAuth: []
       responses:
@@ -602,8 +643,10 @@ paths:
   /api/v1/polos/:
     get:
       operationId: polos_list
+      description: Retorna lista de todos os polos presenciais com suas DRPs.
+      summary: Listar polos
       tags:
-      - polos
+      - Dados Acadêmicos
       security:
       - jwtAuth: []
       responses:
@@ -618,7 +661,16 @@ paths:
   /api/v1/profiles/{user_pk}/:
     get:
       operationId: profiles_retrieve
+      description: Retorna o perfil de um usuário específico pelo ID.
+      summary: Obter perfil de outro usuário
       parameters:
+      - in: path
+        name: user
+        schema:
+          type: string
+          format: uuid
+        description: UUID do usuário
+        required: true
       - in: path
         name: user_pk
         schema:
@@ -626,7 +678,7 @@ paths:
           format: uuid
         required: true
       tags:
-      - profiles
+      - Perfil de Usuário
       security:
       - jwtAuth: []
       responses:
@@ -636,24 +688,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfileDetail'
           description: ''
+        '404':
+          description: Usuário não encontrado
   /api/v1/profiles/me/:
     get:
       operationId: profiles_me_retrieve
+      description: Retorna o perfil completo do usuário autenticado.
+      summary: Obter perfil próprio
       tags:
-      - profiles
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfileDetail'
-          description: ''
-    put:
-      operationId: profiles_me_update
-      tags:
-      - profiles
+      - Perfil de Usuário
       security:
       - jwtAuth: []
       responses:
@@ -665,8 +708,10 @@ paths:
           description: ''
     patch:
       operationId: profiles_me_partial_update
+      description: Atualiza polo, curso, PI e tags do perfil do usuário.
+      summary: Atualizar perfil próprio
       tags:
-      - profiles
+      - Perfil de Usuário
       requestBody:
         content:
           application/json:
@@ -685,13 +730,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileUpdate'
+                $ref: '#/components/schemas/UserProfileDetail'
           description: ''
+        '400':
+          description: Dados inválidos
   /api/v1/profiles/me/tags/:
     get:
       operationId: profiles_me_tags_list
+      description: Retorna todas as tags associadas ao perfil do usuário autenticado.
+      summary: Listar tags do usuário
       tags:
-      - profiles
+      - Perfil de Usuário
       security:
       - jwtAuth: []
       responses:
@@ -706,8 +755,10 @@ paths:
   /api/v1/project-groups/:
     get:
       operationId: project_groups_list
+      description: Retorna lista de todos os grupos de projeto.
+      summary: Listar grupos de projeto
       tags:
-      - project-groups
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
@@ -721,8 +772,15 @@ paths:
           description: ''
     post:
       operationId: project_groups_create
+      description: |-
+        Cria um novo grupo de projeto. O usuário autenticado será o criador e admin do grupo. Informações acadêmicas (PI, DRP, Polo, Eixo, Curso) são herdadas automaticamente do perfil do criador.
+
+        **Validações:**
+        - Usuário não pode estar em outro grupo
+        - Máximo de 5 tags por grupo
+      summary: Criar grupo de projeto
       tags:
-      - project-groups
+      - Grupos de Projeto
       requestBody:
         content:
           application/json:
@@ -744,17 +802,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectGroup'
           description: ''
+        '400':
+          description: Erro de validação (usuário já em grupo, etc)
   /api/v1/project-groups/{group_pk}/members/:
     get:
       operationId: project_groups_members_list
+      description: Retorna lista de membros do grupo com seus IDs de usuário e roles.
+      summary: Listar membros do grupo
       parameters:
       - in: path
         name: group_pk
         schema:
           type: integer
+        description: ID do grupo
         required: true
       tags:
-      - project-groups
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
@@ -766,42 +829,52 @@ paths:
                 items:
                   $ref: '#/components/schemas/MembershipUserId'
           description: ''
+        '404':
+          description: Grupo não encontrado
   /api/v1/project-groups/{group_pk}/members/{user_pk}/:
     delete:
       operationId: project_groups_members_destroy
-      description: Permite que um administrador de grupo (ou o próprio usuário, dependendo
-        da permissão) remova um membro de um grupo.
-      summary: Remover um Membro do Grupo
+      description: |-
+        Remove um membro específico do grupo.
+
+        **Permissões:**
+        - Admin do grupo pode remover qualquer membro
+        - Membro pode se remover (auto-remoção)
+      summary: Remover membro do grupo
       parameters:
       - in: path
         name: group_pk
         schema:
           type: integer
+        description: ID do grupo
         required: true
       - in: path
         name: user_pk
         schema:
           type: string
           format: uuid
+        description: UUID do usuário a ser removido
         required: true
       tags:
-      - Ações de Membros
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
         '204':
-          description: Sucesso. O membro foi removido e não há corpo na resposta.
+          description: Membro removido com sucesso
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Permissão Negada.
+          description: Sem permissão para remover este membro
         '404':
-          description: Não Encontrado. Grupo, usuário ou vínculo de membro não existem.
+          description: Grupo, usuário ou membership não encontrado
   /api/v1/project-groups/{id}/:
     get:
       operationId: project_groups_retrieve
+      description: Retorna informações completas de um grupo específico.
+      summary: Obter detalhes de um grupo
       parameters:
       - in: path
         name: id
@@ -809,7 +882,7 @@ paths:
           type: integer
         required: true
       tags:
-      - project-groups
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
@@ -819,39 +892,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectGroup'
           description: ''
-    put:
-      operationId: project_groups_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - project-groups
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectGroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ProjectGroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ProjectGroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjectGroup'
-          description: ''
+        '404':
+          description: Grupo não encontrado
     patch:
       operationId: project_groups_partial_update
+      description: |-
+        Atualiza nome, descrição e tags do grupo.
+
+        **Permissões:** Apenas o admin do grupo pode atualizar
+      summary: Atualizar grupo
       parameters:
       - in: path
         name: id
@@ -859,7 +908,7 @@ paths:
           type: integer
         required: true
       tags:
-      - project-groups
+      - Grupos de Projeto
       requestBody:
         content:
           application/json:
@@ -878,10 +927,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectGroupUpdate'
+                $ref: '#/components/schemas/ProjectGroup'
           description: ''
+        '400':
+          description: Dados inválidos
+        '403':
+          description: Sem permissão (não é admin do grupo)
+        '404':
+          description: Grupo não encontrado
     delete:
       operationId: project_groups_destroy
+      description: |-
+        Remove o grupo de projeto.
+
+        **Permissões:** Apenas o admin do grupo pode deletar
+      summary: Deletar grupo
       parameters:
       - in: path
         name: id
@@ -889,26 +949,44 @@ paths:
           type: integer
         required: true
       tags:
-      - project-groups
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
         '204':
-          description: No response body
+          description: Grupo deletado com sucesso
+        '403':
+          description: Sem permissão (não é admin do grupo)
+        '404':
+          description: Grupo não encontrado
   /api/v1/project-groups/{id}/join/:
     post:
       operationId: project_groups_join_create
-      description: Permite que um usuário entre diretamente em um grupo aberto ou
-        envie um pedido de entrada para um grupo moderado.
-      summary: Entrar ou Solicitar Entrada em um Grupo
+      description: |-
+        Permite que um usuário solicite entrada em um grupo de projeto.
+
+        **Comportamento:**
+        - Se o grupo não for moderado, o usuário entra imediatamente
+        - Se o grupo for moderado, cria um pedido de entrada pendente
+
+        **Validações:**
+        - Usuário não pode estar em outro grupo
+        - Grupo deve existir e estar ativo
+      summary: Solicitar entrada em grupo
       parameters:
+      - in: path
+        name: group_pk
+        schema:
+          type: integer
+        description: ID do grupo
+        required: true
       - in: path
         name: id
         schema:
           type: integer
         required: true
       tags:
-      - Ações de Grupo
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
@@ -917,26 +995,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Entrada com Sucesso (grupo aberto).
+          description: Entrou no grupo com sucesso (grupo não moderado)
         '202':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Solicitação Enviada (grupo moderado).
+          description: Pedido de entrada criado (grupo moderado)
         '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-          description: Requisição Inválida (usuário já está em um grupo ou já solicitou).
+          description: Usuário já está em um grupo ou já tem pedido pendente
         '404':
-          description: Não Encontrado. O grupo especificado não existe.
+          description: Grupo não encontrado
   /api/v1/project-groups/me/:
     get:
       operationId: project_groups_me_retrieve
+      description: Retorna o grupo de projeto do qual o usuário faz parte.
+      summary: Obter grupo do usuário
       tags:
-      - project-groups
+      - Grupos de Projeto
       security:
       - jwtAuth: []
       responses:
@@ -946,11 +1026,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectGroup'
           description: ''
+        '404':
+          description: Usuário não faz parte de nenhum grupo
   /api/v1/tags/:
     get:
       operationId: tags_list
+      description: Retorna lista de todas as tags de habilidades/interesses disponíveis.
+      summary: Listar tags
       tags:
-      - tags
+      - Dados Acadêmicos
       security:
       - jwtAuth: []
       responses:
@@ -1086,23 +1170,6 @@ components:
       description: |-
         Serializer para o endpoint /api/auth/user/.
         Define quais campos do usuário são retornados.
-      properties:
-        email:
-          type: string
-          format: email
-          minLength: 1
-          title: Email address
-          maxLength: 254
-        first_name:
-          type: string
-          maxLength: 150
-        last_name:
-          type: string
-          maxLength: 150
-      required:
-      - email
-    CustomUserRequest:
-      type: object
       properties:
         email:
           type: string
@@ -1423,24 +1490,6 @@ components:
       required:
       - name
       - tags
-    ProjectGroupUpdate:
-      type: object
-      properties:
-        name:
-          type: string
-          title: Nome Do Grupo
-          maxLength: 150
-        description:
-          type: string
-          nullable: true
-          title: Descricao do Grupo
-        tags:
-          type: array
-          items:
-            type: integer
-      required:
-      - name
-      - tags
     ProjetoIntegrador:
       type: object
       properties:
@@ -1501,15 +1550,6 @@ components:
           maxLength: 100
       required:
       - id
-      - name
-    TagRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-      required:
       - name
     TokenRefresh:
       type: object
@@ -1604,24 +1644,6 @@ components:
       - projeto_integrador
       - tags
       - user
-    UserProfileUpdate:
-      type: object
-      properties:
-        polo:
-          type: integer
-        curso:
-          type: integer
-        projeto_integrador:
-          type: integer
-        tags:
-          type: array
-          items:
-            type: integer
-      required:
-      - curso
-      - polo
-      - projeto_integrador
-      - tags
     VerifyEmailRequest:
       type: object
       properties:
@@ -1637,7 +1659,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
 servers:
-- url: http://127.0.0.1:8000/
+- url: http://127.0.0.1:8000
   description: Servidor de Desenvolvimento Local
-- url: https://api.grupi.com/
+- url: https://api.grupi.com
   description: Servidor de Produção

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from django.conf.global_settings import AUTH_USER_MODEL
@@ -22,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-wfm92ppy$0h&nmasdq#3h3jnmr+1(31pvd=#pbc^1r9#&!+ty=e$7'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-wfm92ppy$0h&nmasdq#3h3jnmr+1(31pvd=#pbc^1r9#&!+ty=e$7')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_ENV', 'dev') == 'dev'
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 # Application definition
 
@@ -163,7 +164,7 @@ sua participação em grupos de projeto.
     },
     'SERVERS': [
         {'url': 'http://127.0.0.1:8000', 'description': 'Servidor de Desenvolvimento Local'},
-        {'url': 'https://api.grupi.com', 'description': 'Servidor de Produção'},
+        {'url': 'https://api.grupi.pavops.net', 'description': 'Servidor de Produção'},
     ],
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/v1',
@@ -233,10 +234,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==========================================
 
 # Permite requisições do frontend React em desenvolvimento
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 
 # Headers permitidos nas requisições
 CORS_ALLOW_HEADERS = [
@@ -263,6 +261,24 @@ CORS_ALLOW_METHODS = [
 
 # Permite envio de cookies e credenciais
 CORS_ALLOW_CREDENTIALS = True
+
+# ==========================================
+# CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
+# ==========================================
+
+if not DEBUG:
+    # Força HTTPS em produção
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Configurações adicionais de segurança
+    X_FRAME_OPTIONS = 'DENY'
 
 # ==========================================
 
