@@ -6,7 +6,7 @@ services:
     container_name: grupi-api
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "3000:3000"
     environment:
       - DJANGO_ENV=dev
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
