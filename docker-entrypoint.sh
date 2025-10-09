@@ -27,7 +27,7 @@ END
 
 echo "Starting Gunicorn..."
 exec gunicorn GruPI.wsgi:application \
-    --bind 0.0.0.0:8000 \
+    --bind 0.0.0.0:3000 \
     --workers 4 \
     --timeout 120 \
     --access-logfile - \
