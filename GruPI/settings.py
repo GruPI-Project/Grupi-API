@@ -288,8 +288,8 @@ CORS_ALLOW_CREDENTIALS = True
 # ==========================================
 
 if ENV == 'prod' or ENV == 'dev':
-    # Força HTTPS em produção
-    SECURE_SSL_REDIRECT = True
+
+    SECURE_SSL_REDIRECT = False #e feito pelo proxy reverso, ex: nginx]
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://grupi.pavops.net,https://www.grupi.pavops.net').split(',')
