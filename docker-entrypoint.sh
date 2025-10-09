@@ -28,6 +28,9 @@ END
 echo "Environment variables:"
 env | grep DJANGO_
 
+echo "Run settings debug command..."
+python manage.py check_settings
+
 echo "Starting Gunicorn..."
 exec gunicorn GruPI.wsgi:application \
     --bind 0.0.0.0:3000 \
