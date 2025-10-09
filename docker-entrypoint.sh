@@ -7,7 +7,7 @@ echo "Activating virtual environment..."
 source .venv/bin/activate
 
 # Coletar arquivos estáticos (WhiteNoise vai comprimir e adicionar hash)
-RUN uv run manage.py collectstatic --noinput
+python manage.py collectstatic --noinput
 
 echo "Running migrations..."
 python manage.py migrate --noinput
