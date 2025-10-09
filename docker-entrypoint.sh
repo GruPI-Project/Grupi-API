@@ -28,7 +28,7 @@ END
 echo "Run settings debug command..."
 python manage.py check_settings
 
-python manage.py import_polos.py
+python manage.py import_polos
 
 echo "Starting Gunicorn..."
 exec gunicorn GruPI.wsgi:application \
