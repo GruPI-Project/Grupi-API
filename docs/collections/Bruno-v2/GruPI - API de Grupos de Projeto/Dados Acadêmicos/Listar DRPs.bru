@@ -1,0 +1,15 @@
+meta {
+  name: Listar DRPs
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/drps/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

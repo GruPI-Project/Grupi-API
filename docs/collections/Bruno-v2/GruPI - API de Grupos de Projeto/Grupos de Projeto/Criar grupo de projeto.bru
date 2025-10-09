@@ -1,0 +1,24 @@
+meta {
+  name: Criar grupo de projeto
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/project-groups/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "",
+    "description": "",
+    "moderated": false,
+    "tags": []
+  }
+}

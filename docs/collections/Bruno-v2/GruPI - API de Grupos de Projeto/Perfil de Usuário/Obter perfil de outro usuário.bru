@@ -1,0 +1,20 @@
+meta {
+  name: Obter perfil de outro usuário
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/profiles/:user_pk/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  user: 
+  user_pk: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

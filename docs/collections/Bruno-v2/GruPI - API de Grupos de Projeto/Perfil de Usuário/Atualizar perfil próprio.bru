@@ -1,0 +1,24 @@
+meta {
+  name: Atualizar perfil próprio
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/profiles/me/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "polo": 0,
+    "curso": 0,
+    "projeto_integrador": 0,
+    "tags": []
+  }
+}

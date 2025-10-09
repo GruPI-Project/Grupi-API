@@ -1,0 +1,15 @@
+meta {
+  name: Sair do grupo
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/leave-group/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

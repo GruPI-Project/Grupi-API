@@ -1,0 +1,20 @@
+meta {
+  name: Rejeitar pedido de entrada
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/join-requests/:id/reject/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 
+  request_pk: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

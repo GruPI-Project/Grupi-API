@@ -1,0 +1,15 @@
+meta {
+  name: Obter grupo do usuário
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/project-groups/me/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

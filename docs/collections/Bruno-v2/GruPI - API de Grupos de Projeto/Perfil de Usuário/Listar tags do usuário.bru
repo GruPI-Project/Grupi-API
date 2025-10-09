@@ -1,0 +1,15 @@
+meta {
+  name: Listar tags do usuário
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/profiles/me/tags/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "GruPI - API de Grupos de Projeto",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

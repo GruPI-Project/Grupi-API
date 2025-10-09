@@ -1,0 +1,19 @@
+meta {
+  name: Listar pedidos de entrada do grupo
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/join-requests/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  group_pk: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,25 @@
+meta {
+  name: auth_registration_create
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/registration/
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "aluno@faculdade.edu",
+    "password1": "M1nhaSenha@42",
+    "password2": "M1nhaSenha@42",
+    "projeto_integrador": 1,
+    "drp": 1,
+    "polo": 1,
+    "curso": 1,
+    "first_name": "Meu Aluno",
+    "last_name": "Sobrenome"
+  }
+}

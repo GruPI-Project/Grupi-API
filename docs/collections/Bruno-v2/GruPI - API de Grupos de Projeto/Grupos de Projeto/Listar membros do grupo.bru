@@ -1,0 +1,19 @@
+meta {
+  name: Listar membros do grupo
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/project-groups/:group_pk/members/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  group_pk: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

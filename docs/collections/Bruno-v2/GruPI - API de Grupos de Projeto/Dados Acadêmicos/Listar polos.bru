@@ -1,0 +1,15 @@
+meta {
+  name: Listar polos
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/polos/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

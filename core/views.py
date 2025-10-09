@@ -538,7 +538,7 @@ class JoinRequestListView(generics.ListAPIView):
     serializer_class = JoinRequestSerializer
 
     def get_queryset(self):
-        group_pk = self.kwargs['group_pk']
+        group_pk = self.request.user.membership.project_group.pk
         group = get_object_or_404(ProjectGroup, pk=group_pk)
         return JoinRequest.objects.filter(project_group=group, status=JoinRequest.Status.PENDING)
 

@@ -1,0 +1,20 @@
+meta {
+  name: Remover membro do grupo
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/project-groups/:group_pk/members/:user_pk/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  group_pk: 
+  user_pk: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

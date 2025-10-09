@@ -1,0 +1,19 @@
+meta {
+  name: Deletar grupo
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/project-groups/:id/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

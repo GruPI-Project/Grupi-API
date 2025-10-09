@@ -1,0 +1,15 @@
+meta {
+  name: Listar Projetos Integradores
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/pis/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

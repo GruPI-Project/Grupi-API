@@ -1,0 +1,20 @@
+meta {
+  name: Aprovar pedido de entrada
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/join-requests/:id/approve/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 
+  request_pk: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

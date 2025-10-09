@@ -1,0 +1,27 @@
+meta {
+  name: Atualizar grupo
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/project-groups/:id/
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "",
+    "description": "",
+    "tags": []
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Listar cursos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/cursos/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

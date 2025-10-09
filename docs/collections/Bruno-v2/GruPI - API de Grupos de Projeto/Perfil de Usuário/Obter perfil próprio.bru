@@ -1,0 +1,15 @@
+meta {
+  name: Obter perfil próprio
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/profiles/me/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

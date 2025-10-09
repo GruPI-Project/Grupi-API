@@ -1,0 +1,20 @@
+meta {
+  name: Solicitar entrada em grupo
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/project-groups/:id/join/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  group_pk: 
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}
