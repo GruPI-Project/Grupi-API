@@ -27,6 +27,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-wfm92ppy$0h&nm
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_ENV', 'dev') == 'dev'
+ENV = os.environ.get('DJANGO_ENV', 'local')
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
@@ -286,7 +287,7 @@ CORS_ALLOW_CREDENTIALS = True
 # CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
 # ==========================================
 
-if not DEBUG:
+if ENV == 'prod' or ENV == 'develop':
     # Força HTTPS em produção
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
