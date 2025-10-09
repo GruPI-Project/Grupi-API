@@ -8,12 +8,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DJANGO_ENV=dev
+      - DJANGO_ENV=${DJANGO_ENV:-dev}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-https://api-dev.pavops.net:3000,http://localhost:3000}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://api-dev.pavops.net:3000,http://localhost:3000}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://api-dev.pavops.net:3000,http://localhost:3000}
-      - ENV=${ENV:-dev}
     volumes:
       - ./data:/app/data
       - ./staticfiles:/app/staticfiles

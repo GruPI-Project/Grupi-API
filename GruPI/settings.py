@@ -287,7 +287,7 @@ CORS_ALLOW_CREDENTIALS = True
 # CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
 # ==========================================
 
-if ENV == 'prod' or ENV == 'develop':
+if ENV == 'prod' or ENV == 'dev':
     # Força HTTPS em produção
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True

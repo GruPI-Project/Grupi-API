@@ -12,6 +12,7 @@ class Command(BaseCommand):
 
         # Verifica o ambiente
         env = getattr(settings, 'ENV', 'NÃO DEFINIDO')
+
         self.stdout.write(f"Ambiente (ENV): {self.style.WARNING(env)}")
 
         # Configurações de segurança

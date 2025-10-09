@@ -25,9 +25,6 @@ else:
     print('Superuser already exists')
 END
 
-echo "Environment variables:"
-env | grep DJANGO_
-
 echo "Run settings debug command..."
 python manage.py check_settings
 
