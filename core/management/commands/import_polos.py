@@ -12,8 +12,8 @@ class Command(BaseCommand):
             '-f',
             type=str,
             # É uma boa prática definir o default aqui.
-            default=os.path.join('data', 'polos.json'),
-            help='Caminho para o arquivo polos.json (padrão: data/polos.json)',
+            default=os.path.join('dataset', 'polos.json'),
+            help='Caminho para o arquivo polos.json (padrão: dataset/polos.json)',
         )
 
     def handle(self, *args, **options):
