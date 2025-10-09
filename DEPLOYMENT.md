@@ -1,6 +1,6 @@
 # Deploy em Produção - GruPI API
 
-## 🚀 Deployment com Docker
+## 🚀 Deployment com Docker + PostgreSQL
 
 ### Pré-requisitos
 - Docker e Docker Compose instalados
@@ -16,8 +16,16 @@ cd GruPI-Project
 ```
 
 #### 2. Configurar variáveis de ambiente
+
+**Para PRODUÇÃO:**
 ```bash
 cp .env.example .env
+nano .env
+```
+
+**Para DESENVOLVIMENTO:**
+```bash
+cp .env.dev .env
 nano .env
 ```
 
@@ -25,26 +33,57 @@ nano .env
 - `DJANGO_SECRET_KEY`: Gere uma chave segura
 - `DJANGO_ALLOWED_HOSTS`: Adicione seu domínio
 - `CORS_ALLOWED_ORIGINS`: Configure os domínios permitidos
+- `DB_PASSWORD`: Use uma senha forte para o banco de dados
 
 Para gerar uma SECRET_KEY segura:
 ```python
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-#### 3. Build e iniciar o container
+#### 3. Build e iniciar os containers
+
+**PRODUÇÃO:**
 ```bash
+# Usando Makefile (Linux/Mac)
+make deploy
+
+# Ou manualmente
 docker-compose up -d --build
+```
+
+**DESENVOLVIMENTO:**
+```bash
+# Usando Makefile (Linux/Mac)
+make dev-deploy
+
+# Ou manualmente
+docker-compose -f docker-compose.dev.yml up -d --build
 ```
 
 #### 4. Verificar logs
 ```bash
+# Produção
+make logs
+# ou
 docker-compose logs -f web
+
+# Desenvolvimento
+make dev-logs
+# ou
+docker-compose -f docker-compose.dev.yml logs -f web
 ```
 
 #### 5. Acessar a aplicação
+
+**PRODUÇÃO:**
 - API: https://api.grupi.pavops.net
 - Admin: https://api.grupi.pavops.net/admin
 - Documentação: https://api.grupi.pavops.net/api/schema/swagger-ui/
+
+**DESENVOLVIMENTO:**
+- API: https://api.grupi-dev.pavops.net (ou http://localhost:8000)
+- Admin: https://api.grupi-dev.pavops.net/admin
+- Documentação: https://api.grupi-dev.pavops.net/api/schema/swagger-ui/
 
 ### Usuário Admin Padrão
 - **Email**: admin@grupi.pavops.net
@@ -52,177 +91,219 @@ docker-compose logs -f web
 
 ⚠️ **IMPORTANTE**: Altere a senha imediatamente após o primeiro login!
 
-## 🔧 Configuração com Nginx (Opcional)
+## 🗄️ PostgreSQL
 
-Se você estiver usando Nginx como proxy reverso, use a configuração em `nginx.conf`.
+O projeto agora usa **PostgreSQL** como banco de dados padrão em todos os ambientes.
+
+### Características:
+- ✅ PostgreSQL 16 Alpine (imagem leve)
+- ✅ Persistência de dados via volumes
+- ✅ Healthcheck automático
+- ✅ Bancos separados para dev e prod
+
+### Acessar o banco de dados:
 
 ```bash
-# Copiar configuração do nginx
-sudo cp nginx.conf /etc/nginx/sites-available/grupi-api
-sudo ln -s /etc/nginx/sites-available/grupi-api /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
+# Produção
+make db-shell
+# ou
+docker-compose exec db psql -U grupi_user -d grupi_db
+
+# Desenvolvimento
+make dev-db-shell
+# ou
+docker-compose -f docker-compose.dev.yml exec db psql -U grupi_user -d grupi_db_dev
 ```
 
-## 📊 Comandos Úteis
+### Backup e Restore:
 
-### Executar migrações
 ```bash
-docker-compose exec web python manage.py migrate
+# Backup do PostgreSQL (produção)
+docker-compose exec db pg_dump -U grupi_user grupi_db > backup_db_$(date +%Y%m%d).sql
+
+# Restore (produção)
+cat backup_db.sql | docker-compose exec -T db psql -U grupi_user grupi_db
+
+# Backup via Django (produção)
+make backup
+
+# Backup via Django (desenvolvimento)
+make dev-backup
 ```
 
-### Criar superusuário
+## 🔧 Comandos Úteis (com Makefile)
+
+### Produção:
 ```bash
-docker-compose exec web python manage.py createsuperuser
+make help           # Ver todos os comandos
+make build          # Build da imagem
+make up             # Iniciar containers
+make down           # Parar containers
+make logs           # Ver logs
+make shell          # Django shell
+make migrate        # Executar migrações
+make collectstatic  # Coletar estáticos
+make backup         # Backup do DB
+make db-shell       # PostgreSQL shell
 ```
 
-### Coletar arquivos estáticos
+### Desenvolvimento:
 ```bash
-docker-compose exec web python manage.py collectstatic --noinput
+make dev-build      # Build da imagem
+make dev-up         # Iniciar containers
+make dev-down       # Parar containers
+make dev-logs       # Ver logs
+make dev-shell      # Django shell
+make dev-migrate    # Executar migrações
+make dev-backup     # Backup do DB
+make dev-db-shell   # PostgreSQL shell
 ```
 
-### Acessar shell do Django
+### Sem Makefile (Windows):
+
+**Produção:**
 ```bash
+docker-compose up -d --build           # Iniciar
+docker-compose down                    # Parar
+docker-compose logs -f web             # Ver logs
 docker-compose exec web python manage.py shell
+docker-compose exec web python manage.py migrate
+docker-compose exec db psql -U grupi_user -d grupi_db
 ```
 
-### Backup do banco de dados
+**Desenvolvimento:**
 ```bash
-docker-compose exec web python manage.py dumpdata > backup.json
+docker-compose -f docker-compose.dev.yml up -d --build
+docker-compose -f docker-compose.dev.yml down
+docker-compose -f docker-compose.dev.yml logs -f web
+docker-compose -f docker-compose.dev.yml exec web python manage.py shell
+docker-compose -f docker-compose.dev.yml exec web python manage.py migrate
+docker-compose -f docker-compose.dev.yml exec db psql -U grupi_user -d grupi_db_dev
 ```
 
-### Restaurar backup
-```bash
-docker-compose exec web python manage.py loaddata backup.json
-```
+## 📦 Estrutura dos Ambientes
 
-### Ver logs em tempo real
-```bash
-docker-compose logs -f web
 ```
-
-### Reiniciar aplicação
-```bash
-docker-compose restart web
-```
-
-### Parar aplicação
-```bash
-docker-compose down
-```
-
-### Atualizar aplicação
-```bash
-git pull
-docker-compose down
-docker-compose up -d --build
+.
+├── docker-compose.yml          # Produção
+├── docker-compose.dev.yml      # Desenvolvimento
+├── .env.example                # Template
+├── .env.dev                    # Configurações de dev
+├── .env                        # Configurações de prod (criar manualmente)
+└── Dockerfile                  # Build único para ambos
 ```
 
 ## 🔒 Segurança
 
 ### Configurações obrigatórias para produção:
-1. ✅ `DJANGO_ENV=prod` (já configurado)
-2. ✅ `DEBUG=False` (ativado quando DJANGO_ENV=prod)
+1. ✅ `DJANGO_ENV=prod`
+2. ✅ `DEBUG=False` (automático quando DJANGO_ENV=prod)
 3. ✅ `DJANGO_SECRET_KEY` único e seguro
 4. ✅ `ALLOWED_HOSTS` configurado corretamente
-5. ✅ HTTPS habilitado (SSL/TLS)
-6. ✅ CORS configurado adequadamente
-7. ✅ Senhas fortes para admin
+5. ✅ `DB_PASSWORD` forte e única
+6. ✅ HTTPS habilitado (SSL/TLS)
+7. ✅ CORS e CSRF configurados adequadamente
+8. ✅ Senhas fortes para admin e banco de dados
 
-### Recomendações adicionais:
-- Use um banco de dados PostgreSQL em produção (veja seção abaixo)
-- Configure backups automáticos
-- Monitore logs regularmente
-- Mantenha as dependências atualizadas
-- Use um gerenciador de secrets (AWS Secrets Manager, Vault, etc.)
+### Diferenças entre Ambientes:
 
-## 🗄️ Migração para PostgreSQL (Recomendado para Produção)
+| Configuração | Desenvolvimento | Produção |
+|--------------|-----------------|----------|
+| DEBUG | True | False |
+| HTTPS | Opcional | Obrigatório |
+| Domínio | api.grupi-dev.pavops.net | api.grupi.pavops.net |
+| DB Nome | grupi_db_dev | grupi_db |
+| Workers Gunicorn | 2 (com reload) | 4 |
+| Logs | Debug | Info |
+| Volume mount | Sim (hot-reload) | Não |
 
-### 1. Atualizar docker-compose.yml
-```yaml
-services:
-  db:
-    image: postgres:15-alpine
-    container_name: grupi-db
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=grupi_db
-      - POSTGRES_USER=grupi_user
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+## 🌐 Migração de Dados
 
-  web:
-    depends_on:
-      - db
-    environment:
-      - DB_ENGINE=django.db.backends.postgresql
-      - DB_NAME=grupi_db
-      - DB_USER=grupi_user
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=db
-      - DB_PORT=5432
+### De SQLite para PostgreSQL:
 
-volumes:
-  postgres_data:
+```bash
+# 1. Fazer backup dos dados do SQLite
+python manage.py dumpdata > data_backup.json
+
+# 2. Configurar PostgreSQL
+# Editar .env com as configurações do PostgreSQL
+
+# 3. Executar migrações no PostgreSQL
+docker-compose exec web python manage.py migrate
+
+# 4. Importar dados
+docker-compose exec web python manage.py loaddata data_backup.json
 ```
 
-### 2. Atualizar settings.py
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.environ.get('DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'USER': os.environ.get('DB_USER', ''),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', ''),
-        'PORT': os.environ.get('DB_PORT', ''),
-    }
-}
-```
+### Entre ambientes (dev -> prod):
 
-### 3. Adicionar psycopg2 ao requirements.txt
-```
-psycopg2-binary==2.9.9
+```bash
+# 1. Backup do dev
+make dev-backup
+
+# 2. Copiar para produção e importar
+make restore FILE=backup_dev_20251009_120000.json
 ```
 
 ## 📝 Variáveis de Ambiente
 
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `DJANGO_ENV` | `dev` | Ambiente (dev/prod) |
-| `DJANGO_SECRET_KEY` | (inseguro) | Chave secreta do Django |
-| `DJANGO_ALLOWED_HOSTS` | `*` | Hosts permitidos |
-| `CORS_ALLOWED_ORIGINS` | localhost | Origens CORS permitidas |
-| `DB_ENGINE` | sqlite3 | Engine do banco de dados |
-| `DB_NAME` | db.sqlite3 | Nome do banco |
-| `DB_USER` | - | Usuário do banco |
-| `DB_PASSWORD` | - | Senha do banco |
-| `DB_HOST` | - | Host do banco |
-| `DB_PORT` | - | Porta do banco |
+### Obrigatórias:
+
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `DJANGO_ENV` | Ambiente (dev/prod) | `prod` |
+| `DJANGO_SECRET_KEY` | Chave secreta Django | (gerar nova) |
+| `DJANGO_ALLOWED_HOSTS` | Hosts permitidos | `api.grupi.pavops.net` |
+| `DB_PASSWORD` | Senha do PostgreSQL | (senha forte) |
+
+### Opcionais (com defaults):
+
+| Variável | Default | Descrição |
+|----------|---------|-----------|
+| `DB_NAME` | grupi_db | Nome do banco |
+| `DB_USER` | grupi_user | Usuário do banco |
+| `DB_HOST` | db | Host do PostgreSQL |
+| `DB_PORT` | 5432 | Porta do PostgreSQL |
 
 ## 🔍 Troubleshooting
 
-### Erro: Bad Gateway 502
-- Verifique se o container está rodando: `docker-compose ps`
-- Verifique os logs: `docker-compose logs web`
-- Verifique se a porta 8000 está exposta
+### Erro: Database connection refused
+```bash
+# Verificar se o PostgreSQL está rodando
+docker-compose ps
+
+# Ver logs do banco
+docker-compose logs db
+
+# Aguardar o healthcheck
+# O web service só inicia após o DB estar saudável
+```
+
+### Erro: Could not connect to database
+- Verifique as credenciais no .env
+- Verifique se o container do DB está rodando
+- Aguarde alguns segundos após `docker-compose up`
 
 ### Erro: Static files não carregam
 ```bash
 docker-compose exec web python manage.py collectstatic --noinput
 ```
 
-### Erro: CSRF verification failed
-- Verifique se `ALLOWED_HOSTS` inclui seu domínio
-- Verifique configurações CORS
+### Resetar o banco de dados:
+```bash
+# CUIDADO: Isso apaga todos os dados!
 
-### Erro: Database locked
-- Considere migrar para PostgreSQL
-- Ou aumente o timeout do SQLite
+# Desenvolvimento
+make dev-clean
+make dev-deploy
+
+# Produção (fazer backup primeiro!)
+make backup
+make clean
+make deploy
+```
 
 ## 📞 Suporte
 
 Para problemas ou dúvidas, entre em contato:
 - Email: dev-grupi@pavops.net
-
