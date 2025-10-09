@@ -28,6 +28,8 @@ END
 echo "Run settings debug command..."
 python manage.py check_settings
 
+python manage.py import_polos.py
+
 echo "Starting Gunicorn..."
 exec gunicorn GruPI.wsgi:application \
     --bind 0.0.0.0:3000 \
