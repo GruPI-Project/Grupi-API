@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'GruPI.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Configuração dinâmica do banco de dados baseado em variáveis de ambiente
-if env == 'prod' or env == 'dev':
+if ENV == 'prod' or ENV == 'dev':
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
