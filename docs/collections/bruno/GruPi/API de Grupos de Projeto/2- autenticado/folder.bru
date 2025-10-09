@@ -8,46 +8,5 @@ auth {
 }
 
 auth:bearer {
-  token: {{authToken}}
-}
-
-script:pre-request {
-  async function fetchNewToken() {
-      let email = bru.getEnvVar("email");
-      let pass = bru.getEnvVar("senha");
-    
-      console.log('email ', email)
-      const response = await bru.sendRequest({
-        url: 'http://127.0.0.1:8000/api/v1/auth/login/',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        data: {
-            email: email,
-            password: pass
-        }
-      }, function (err, res) {
-    if (err) {
-      console.error('Error:', err);
-      return;
-    }
-    console.log('Response:', res);
-    console.log('Token capturado com sucesso!');
-      if (res.status >= 200 && res.status < 300) {
-        const token = res.data.access; 
-        console.log(token)
-        if (token) {
-          bru.setVar('authToken', token);
-          console.log('Token atualizado com sucesso!');
-        } else {
-          console.error('Erro: Token não encontrado na resposta do login.');
-        }
-      } else {
-        // Loga um erro se o login falhar
-        console.error(`Falha ao obter token. Status: ${response.status}`, response.getBody());
-      }
-  });
-    }
-  return fetchNewToken();
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU5Mjc4OTQxLCJpYXQiOjE3NTkyNzg2NDEsImp0aSI6ImUyYzk0ZWEyZThkZDQwZmY4ZmUyN2Q0NDBkOTNiOWQ0IiwidXNlcl9pZCI6ImIyOGE2YzExLWJkY2MtNDM1Ni04OWY4LTU2ZDc2MWYwYzE1YyJ9.GbEuBegVxQ8eQ5qTJBVLjiUTkzXkNa8a-mrf02Q2Mmk
 }

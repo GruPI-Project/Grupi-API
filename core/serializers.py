@@ -1,11 +1,14 @@
 # seu_app/serializers.py
 from cProfile import Profile
 
+from allauth.account.internal.userkit import user_email
+from django.db import models
+from drf_spectacular.utils import extend_schema_field, extend_schema, OpenApiResponse
 from rest_framework import serializers
 from dj_rest_auth.serializers import LoginSerializer
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from .models import CustomUser, UserProfile, ProjetoIntegrador, DRP, Polo, Curso, Eixo, Tags, UserTags, ProjectGroup, \
-    Membership
+    Membership, JoinRequest
 from django.db import transaction
 
 
@@ -79,12 +82,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # Lista dos campos do UserProfile que você quer exibir
         fields = ['polo', 'curso', 'projeto_integrador', 'eixo', 'drp']
 
+    @extend_schema_field(serializers.CharField)
     def get_drp(self, obj):
+
         # Acessamos a drp através do polo do perfil
         if obj.polo:
             return obj.polo.drp.__str__() # Usamos __str__ para retornar o nome formatado
         return None
 
+    @extend_schema_field(serializers.CharField)
     def get_eixo(self, obj):
         """
         Este método retorna o Eixo.
@@ -123,11 +129,14 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['id','user', 'polo', 'curso', 'projeto_integrador', 'eixo', 'drp', 'tags']
 
+    @extend_schema_field(serializers.CharField)
     def get_drp(self, obj):
         # Acessamos a drp através do polo do perfil
         if obj.polo:
             return obj.polo.drp.__str__()  # Usamos __str__ para retornar o nome formatado
         return None
+
+    @extend_schema_field(serializers.CharField)
     def get_eixo(self, obj):
         """
         Este método retorna o Eixo.
@@ -159,7 +168,7 @@ class EixoSerializer(serializers.ModelSerializer):
 class DRPSerializer(serializers.ModelSerializer):
     class Meta:
         model = DRP
-        fields = ['id', 'numero', 'nome']
+        fields = ['id', 'numero']
 
 class PoloSerializer(serializers.ModelSerializer):
     drp = DRPSerializer(read_only=True)
@@ -190,6 +199,7 @@ class MembershipSerializer(serializers.ModelSerializer):
 
         fields = ['user', 'role']
 
+    @extend_schema_field(serializers.EmailField)
     def get_user(self, obj):
         if obj.user:
             return obj.user.email
@@ -255,9 +265,25 @@ class ProjectGroupUpdateSerializer(serializers.ModelSerializer):
         model = ProjectGroup
         fields = ['name', 'description','tags']
 
-class ProjectGroupMembersUserIdSerializer(serializers.ModelSerializer):
-    memberships = MembershipUserIdSerializer(many=True, read_only=True)
+class MembershipUserIdSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.email')
 
     class Meta:
-        model = ProjectGroup
-        fields = ['memberships']
+        model = Membership
+        fields = ['user', 'role']
+
+#JOINREQUESTS
+class JoinRequestSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.email')
+    project_group = serializers.ReadOnlyField(source='project_group.name')
+
+    class Meta:
+        model = JoinRequest
+        fields = ['id', 'user', 'project_group', 'status', 'date_requested']
+
+
+
+#Generic serializers
+class MessageResponseSerializer(serializers.Serializer):
+    """Serializer para respostas de mensagem simples com uma chave 'detail'."""
+    detail = serializers.CharField()

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from django.conf.global_settings import AUTH_USER_MODEL
@@ -22,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-wfm92ppy$0h&nmasdq#3h3jnmr+1(31pvd=#pbc^1r9#&!+ty=e$7'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-wfm92ppy$0h&nmasdq#3h3jnmr+1(31pvd=#pbc^1r9#&!+ty=e$7')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_ENV', 'dev') == 'dev'
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 # Application definition
 
@@ -53,11 +54,16 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
 
+    'corsheaders',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
+
     'core',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -123,6 +129,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_AUTH = {
@@ -134,6 +141,37 @@ REST_AUTH = {
     'USER_DETAILS_SERIALIZER': 'core.serializers.CustomUserDetailsSerializer',
 }
 
+# Configurações do drf-spectacular para documentação OpenAPI
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'GruPI - API de Grupos de Projeto',
+    'DESCRIPTION': '''API para plataforma de formação de grupos de projeto acadêmico da UNIVESP.
+    
+Permite que usuários se cadastrem, criem perfis, encontrem grupos compatíveis 
+com base em critérios acadêmicos (Polo, DRP, Curso, Eixo, PI) e gerenciem 
+sua participação em grupos de projeto.
+
+**Recursos principais:**
+- Autenticação via JWT (dj-rest-auth)
+- Gestão de perfil de usuário com tags de habilidades
+- Criação e gerenciamento de grupos de projeto
+- Sistema de membros com roles (ADMIN/MEMBER)
+- Dados acadêmicos (Eixos, Cursos, DRPs, Polos, PIs)''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CONTACT': {
+        'name': 'Equipe de Desenvolvimento GruPI',
+        'email': 'dev-grupi@pavops.net'
+    },
+    'SERVERS': [
+        {'url': 'http://127.0.0.1:8000', 'description': 'Servidor de Desenvolvimento Local'},
+        {'url': 'https://api.grupi.pavops.net', 'description': 'Servidor de Produção'},
+    ],
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/v1',
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+}
 
 ACCOUNT_ADAPTER = 'core.adapters.CustomAccountAdapter'
 
@@ -145,16 +183,23 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-# Configurações principais do allauth
-ACCOUNT_LOGIN_METHODS = {'email'}
+# --- Configurações Modernas para Login e Registro ---
+ACCOUNT_LOGIN_METHODS = ['email']
 
+# Define quais campos aparecem no formulário de registro e se são obrigatórios.
+# O asterisco (*) significa 'obrigatório'.
+# ESTA É A CONFIGURAÇÃO QUE SATISFAZ OS AVISOS.
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 
-# Garante que o e-mail seja verificado (opcional para dev)
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
-
-# Define que o login é feito por e-mail e que o username não é usado
+# Remove a necessidade de um campo de username no modelo do usuário para o allauth.
+# Essencial para um sistema sem username.
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+# Garante que cada e-mail seja único no banco de dados.
+ACCOUNT_UNIQUE_EMAIL = True
+
+# Define o nível de verificação de e-mail (pode ser 'mandatory' em produção).
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
 
 # --- Backend de E-mail para Desenvolvimento ---
@@ -177,11 +222,65 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ==========================================
+# CONFIGURAÇÕES DE CORS
+# ==========================================
+
+# Permite requisições do frontend React em desenvolvimento
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+
+# Headers permitidos nas requisições
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Métodos HTTP permitidos
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Permite envio de cookies e credenciais
+CORS_ALLOW_CREDENTIALS = True
+
+# ==========================================
+# CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
+# ==========================================
+
+if not DEBUG:
+    # Força HTTPS em produção
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Configurações adicionais de segurança
+    X_FRAME_OPTIONS = 'DENY'
+
+# ==========================================
 
 ADMIN_REORDER = (
     # Primeiro grupo: "Gerenciamento de Acesso"

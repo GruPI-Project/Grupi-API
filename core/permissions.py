@@ -1,6 +1,23 @@
 
 from rest_framework import permissions
-from .models import Membership
+
+class IsMemberOfGroup(permissions.BasePermission):
+    """
+    Permissão customizada para permitir que apenas membros de um grupo
+    possam visualizar o grupo.
+    """
+    message = 'Você não é membro deste grupo.'
+
+    def has_object_permission(self, request, view, obj):
+        """
+        Verifica a permissão em nível de objeto.
+        'obj' aqui é a instância de ProjectGroup.
+        """
+        try:
+            Membership.objects.get(user=request.user, project_group=obj)
+            return True
+        except Membership.DoesNotExist:
+            return False
 
 class IsAdminOfGroup(permissions.BasePermission):
     """
