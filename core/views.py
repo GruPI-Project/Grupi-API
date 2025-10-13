@@ -683,3 +683,4 @@ class JoinRequestSelfView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return JoinRequest.objects.filter(user=user)
+
