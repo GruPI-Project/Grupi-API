@@ -23,7 +23,6 @@ from .serializers import *
     )
 )
 class EixoListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Eixo.objects.all()
     serializer_class = EixoSerializer
 
@@ -36,7 +35,6 @@ class EixoListView(generics.ListAPIView):
     )
 )
 class PoloListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Polo.objects.all()
     serializer_class = PoloSerializer
 
@@ -49,7 +47,6 @@ class PoloListView(generics.ListAPIView):
     )
 )
 class DRPListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = DRP.objects.all()
     serializer_class = DRPSerializer
 
@@ -62,7 +59,6 @@ class DRPListView(generics.ListAPIView):
     )
 )
 class CursoListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Curso.objects.all()
     serializer_class = CursoSerializer
 
@@ -75,7 +71,6 @@ class CursoListView(generics.ListAPIView):
     )
 )
 class ProjetoIntegradorListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = ProjetoIntegrador.objects.all()
     serializer_class = ProjetoIntegradorSerializer
 
@@ -88,7 +83,6 @@ class ProjetoIntegradorListView(generics.ListAPIView):
     )
 )
 class TagsListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Tags.objects.all()
     serializer_class = TagSerializer
 

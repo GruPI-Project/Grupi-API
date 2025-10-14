@@ -408,6 +408,7 @@ paths:
       - Dados Acadêmicos
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -426,6 +427,7 @@ paths:
       - Dados Acadêmicos
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -444,6 +446,7 @@ paths:
       - Dados Acadêmicos
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -631,6 +634,7 @@ paths:
       - Dados Acadêmicos
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -649,6 +653,7 @@ paths:
       - Dados Acadêmicos
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -1037,6 +1042,7 @@ paths:
       - Dados Acadêmicos
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -1661,5 +1667,7 @@ components:
 servers:
 - url: http://127.0.0.1:8000
   description: Servidor de Desenvolvimento Local
-- url: https://api.grupi.com
+- url: https://api.grupi-dev.pavops.net
+  description: Servidor de Desenvolvimento
+- url: https://api.grupi.pavops.net
   description: Servidor de Produção
