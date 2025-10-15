@@ -40,14 +40,14 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWT'
+                $ref: '#/components/schemas/Token'
           description: ''
   /api/v1/auth/logout/:
     post:
@@ -60,7 +60,7 @@ paths:
       tags:
       - auth
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -92,7 +92,7 @@ paths:
               $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -123,7 +123,7 @@ paths:
               $ref: '#/components/schemas/PasswordResetRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -157,7 +157,7 @@ paths:
               $ref: '#/components/schemas/PasswordResetConfirmRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -188,14 +188,14 @@ paths:
               $ref: '#/components/schemas/CustomRegisterRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWT'
+                $ref: '#/components/schemas/Token'
           description: ''
   /api/v1/auth/registration/resend-email/:
     post:
@@ -219,7 +219,7 @@ paths:
               $ref: '#/components/schemas/ResendEmailVerificationRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '201':
@@ -250,7 +250,7 @@ paths:
               $ref: '#/components/schemas/VerifyEmailRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -259,56 +259,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/RestAuthDetail'
           description: ''
-  /api/v1/auth/token/refresh/:
-    post:
-      operationId: auth_token_refresh_create
-      description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenRefresh'
-          description: ''
-  /api/v1/auth/token/verify/:
-    post:
-      operationId: auth_token_verify_create
-      description: |-
-        Takes a token and indicates if it is valid.  This view provides no
-        information about a token's fitness for a particular use.
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenVerifyRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenVerifyRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenVerifyRequest'
-        required: true
-      responses:
-        '200':
-          description: No response body
   /api/v1/auth/user/:
     get:
       operationId: auth_user_retrieve
@@ -324,7 +274,7 @@ paths:
       tags:
       - auth
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -358,7 +308,7 @@ paths:
               $ref: '#/components/schemas/CustomUserDetailsRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -391,7 +341,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCustomUserDetailsRequest'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -407,7 +357,7 @@ paths:
       tags:
       - Dados Acadêmicos
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -426,7 +376,7 @@ paths:
       tags:
       - Dados Acadêmicos
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -445,7 +395,7 @@ paths:
       tags:
       - Dados Acadêmicos
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -474,7 +424,7 @@ paths:
       tags:
       - Pedidos de Entrada
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -509,7 +459,7 @@ paths:
       tags:
       - Pedidos de Entrada
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -554,7 +504,7 @@ paths:
       tags:
       - Pedidos de Entrada
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -584,7 +534,7 @@ paths:
       tags:
       - Pedidos de Entrada
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -609,7 +559,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: Saiu do grupo com sucesso
@@ -633,7 +583,7 @@ paths:
       tags:
       - Dados Acadêmicos
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -652,7 +602,7 @@ paths:
       tags:
       - Dados Acadêmicos
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -685,7 +635,7 @@ paths:
       tags:
       - Perfil de Usuário
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -703,7 +653,7 @@ paths:
       tags:
       - Perfil de Usuário
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -729,7 +679,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUserProfileUpdateRequest'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -747,7 +697,7 @@ paths:
       tags:
       - Perfil de Usuário
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -765,7 +715,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -799,7 +749,7 @@ paths:
               $ref: '#/components/schemas/ProjectGroupRequest'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -824,7 +774,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -863,7 +813,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: Membro removido com sucesso
@@ -889,7 +839,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -926,7 +876,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedProjectGroupUpdateRequest'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -956,7 +906,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: Grupo deletado com sucesso
@@ -993,7 +943,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -1023,7 +973,7 @@ paths:
       tags:
       - Grupos de Projeto
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1041,7 +991,7 @@ paths:
       tags:
       - Dados Acadêmicos
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1217,20 +1167,6 @@ components:
       required:
       - id
       - nome
-    JWT:
-      type: object
-      description: Serializer for JWT authentication.
-      properties:
-        access:
-          type: string
-        refresh:
-          type: string
-        user:
-          $ref: '#/components/schemas/CustomUserDetails'
-      required:
-      - access
-      - refresh
-      - user
     JoinRequest:
       type: object
       properties:
@@ -1557,32 +1493,15 @@ components:
       required:
       - id
       - name
-    TokenRefresh:
+    Token:
       type: object
+      description: Serializer for Token model.
       properties:
-        access:
+        key:
           type: string
-          readOnly: true
+          maxLength: 40
       required:
-      - access
-    TokenRefreshRequest:
-      type: object
-      properties:
-        refresh:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - refresh
-    TokenVerifyRequest:
-      type: object
-      properties:
-        token:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - token
+      - key
     UserProfile:
       type: object
       description: |-
@@ -1660,10 +1579,10 @@ components:
       required:
       - key
   securitySchemes:
-    jwtAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
 servers:
 - url: http://127.0.0.1:8000
   description: Servidor de Desenvolvimento Local
