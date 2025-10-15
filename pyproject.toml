@@ -14,7 +14,6 @@ dependencies = [
     "django-jazzmin==3.0.1",
     "django-modeladmin-reorder==0.3.1",
     "djangorestframework==3.16.1",
-    "djangorestframework-simplejwt==5.5.1",
     "drf-spectacular>=0.28.0",
     "drf-spectacular-sidecar>=2025.10.1",
     "idna==3.10",

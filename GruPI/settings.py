@@ -141,19 +141,21 @@ AUTH_USER_MODEL = 'core.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_AUTH = {
-    'USE_JWT': True,
-    'JWT_AUTH_HTTPONLY': False,
-    'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
-#    'LOGIN_SERIALIZER': 'core.serializers.CustomLoginSerializer',
+    'USE_JWT': False,
+    'SESSION_LOGIN': True,
     'REGISTER_SERIALIZER': 'core.serializers.CustomRegisterSerializer',
     'USER_DETAILS_SERIALIZER': 'core.serializers.CustomUserDetailsSerializer',
 }
+
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False
 
 # Configurações do drf-spectacular para documentação OpenAPI
 SPECTACULAR_SETTINGS = {
