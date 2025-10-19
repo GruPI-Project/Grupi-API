@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
-from views import get_csrf_token
+from .views import get_csrf_token
 
 urlpatterns = [
     path('csrf/', get_csrf_token, name='api-csrf'),
