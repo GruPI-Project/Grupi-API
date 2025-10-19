@@ -152,9 +152,7 @@ REST_AUTH = {
     'USER_DETAILS_SERIALIZER': 'core.serializers.CustomUserDetailsSerializer',
 }
 
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = False
+
 
 # Configurações do drf-spectacular para documentação OpenAPI
 SPECTACULAR_SETTINGS = {
@@ -295,6 +293,12 @@ CORS_ALLOW_METHODS = [
 
 # Permite envio de cookies e credenciais
 CORS_ALLOW_CREDENTIALS = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = 'none'
+CSRF_COOKIE_SAMESITE = 'none'
+CSRF_COOKIE_HTTPONLY = False
+
 
 # ==========================================
 # CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
