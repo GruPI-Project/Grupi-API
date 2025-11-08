@@ -153,5 +153,5 @@ class ProjectGroupTagsAdmin(admin.ModelAdmin):
 
 @admin.register(OTP)
 class OTPAdmin(admin.ModelAdmin):
-    list_display = ('user', 'code', 'created_at', 'is_used')
-    search_fields = ('user__email', 'code')
+    list_display = ('user', 'otp_code', 'created_at', 'expires_at', 'failed_attempts' )
+    search_fields = ('user__email',)
