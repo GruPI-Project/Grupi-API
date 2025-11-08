@@ -13,6 +13,7 @@ services:
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-https://api-dev.pavops.net:3000,http://localhost:3000}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://api-dev.pavops.net:3000,http://localhost:3000}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://api-dev.pavops.net:3000,http://localhost:3000}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
       - DATABASE_URL=${DATABASE_URL:-postgres://grupi_user:grupi_password@db:5432/grupi_db}
     volumes:
       - ./data:/app/data
