@@ -354,7 +354,8 @@ ADMIN_REORDER = (
             'core.CustomUser',
             'core.UserProfile',
             'core.UserTags',
-            'account.EmailAddress'
+            'account.EmailAddress',
+            'core.OTP'
         )
     },
 
