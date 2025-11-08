@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  web:
+  django:
     build: .
     container_name: grupi-api
     restart: unless-stopped
@@ -22,6 +22,7 @@ services:
       - "traefik.http.routers.grupi-api.entrypoints=websecure"
       - "traefik.http.routers.grupi-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.grupi-api.loadbalancer.server.port=8000"
+      - "project=grupi"
 
 networks:
   default:
