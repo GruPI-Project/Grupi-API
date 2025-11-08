@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
 
+    'premailer',
+
     'corsheaders',
     'drf_spectacular',
     'drf_spectacular_sidecar',
@@ -212,12 +214,31 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 # Garante que cada e-mail seja único no banco de dados.
 ACCOUNT_UNIQUE_EMAIL = True
 
-# Define o nível de verificação de e-mail (pode ser 'mandatory' em produção).
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
+# Define o nível de verificação de e-mail optional em dev (pode ser 'mandatory' em produção).
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+#test allauth otp
+ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED = True
 
 
-# --- Backend de E-mail para Desenvolvimento ---
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+if DEBUG:
+    # --- Backend de E-mail para Desenvolvimento com o mailhog em localhost ---
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'localhost'
+    EMAIL_PORT = 1025
+
+    # Não precisa de usuário, senha ou TLS para o MailHog
+    EMAIL_USE_TLS = False
+    EMAIL_HOST_USER = ''
+    EMAIL_HOST_PASSWORD = ''
+
+if not DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.example.com')
+    EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 
 # Internationalization
@@ -266,7 +287,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==========================================
 
 # Permite requisições do frontend React em desenvolvimento
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000, http://127.0.0.1:3000, http://127.0.0.1:5173, http://localhost:5173').split(',')
 
 # Headers permitidos nas requisições
 CORS_ALLOW_HEADERS = [
@@ -298,8 +319,10 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'none'
 CSRF_COOKIE_SAMESITE = 'none'
 CSRF_COOKIE_HTTPONLY = False
-
-
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:5173/*', 'http://localhost:5173/*']
+COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
+CSRF_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
+SESSION_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
 # ==========================================
 # CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
 # ==========================================
@@ -307,8 +330,6 @@ CSRF_COOKIE_HTTPONLY = False
 if ENV == 'prod' or ENV == 'dev':
 
     SECURE_SSL_REDIRECT = False #e feito pelo proxy reverso, ex: nginx]
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://grupi.pavops.net,https://www.grupi.pavops.net').split(',')
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True

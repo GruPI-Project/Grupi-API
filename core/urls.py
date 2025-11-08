@@ -3,7 +3,8 @@ from django.urls import path
 from .views import EixoListView, PoloListView, DRPListView, CursoListView, ProjetoIntegradorListView, TagsListView, \
     ProfileDetailsView, ProfileSelfView, UserTagsListView, ProjectGroupView, ProjectGroupDetailView, \
     MembershipDeleteView, ProjectGroupSelfView, LeaveGroupView, JoinGroupView, ProjectGroupMembersListView, \
-    JoinRequestListView, JoinRequestApproveView, JoinRequestRejectView, JoinRequestSelfView
+    JoinRequestListView, JoinRequestApproveView, JoinRequestRejectView, JoinRequestSelfView, PasswordResetRequestView, \
+    PasswordResetValidateOTPView, PasswordResetSetNewPasswordView
 
 app_name = 'core'
 
@@ -40,4 +41,11 @@ urlpatterns = [
 
     # --- Ações de Nível Superior ---
     path('leave-group/', LeaveGroupView.as_view(), name='leave-group'),
+
+    # --- Reset de senha com OTP
+    path('password-reset/request/', PasswordResetRequestView.as_view(), name='api-password-reset-request'),
+    path('password-reset/validate-otp/', PasswordResetValidateOTPView.as_view(),
+         name='api-password-reset-validate-otp'),
+    path('password-reset/set-new/', PasswordResetSetNewPasswordView.as_view(), name='api-password-reset-set-new'),
+
 ]

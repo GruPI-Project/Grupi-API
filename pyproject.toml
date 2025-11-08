@@ -25,4 +25,5 @@ dependencies = [
     "urllib3==2.5.0",
     "whitenoise>=6.8.2",
     "dj_database_url>=3.0.0",
+    "premailer>=3.10.0",
 ]

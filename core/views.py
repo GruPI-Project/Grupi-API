@@ -1,6 +1,12 @@
+import logging
+import random
+from datetime import timedelta
+from datetime import datetime
 from django.template.defaulttags import querystring
+from django.core.mail import send_mail
 from django.http import Http404
 from django.db import transaction, IntegrityError
+from django.conf import settings
 from rest_framework import generics, serializers, permissions, status
 from drf_spectacular.utils import extend_schema_field, extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -9,10 +15,10 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Eixo, Polo, DRP, Curso, ProjetoIntegrador, Tags, UserProfile, UserTags, ProjectGroup, Membership, \
-    CustomUser, JoinRequest
+    CustomUser, JoinRequest, OTP
 from .permissions import IsAdminOfGroup, CanRemoveMembership, IsMemberOfGroup
 from .serializers import *
-
+from premailer import transform
 
 @extend_schema_view(
     get=extend_schema(
@@ -677,3 +683,211 @@ class JoinRequestSelfView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return JoinRequest.objects.filter(user=user)
+
+
+#
+# class CustomRegisterView(RegisterView):
+#     def perform_create(self, serializer):
+#         user = super().perform_create(serializer)
+#         COOLDOWN_SECONDS = 60
+#
+#         # --- LÓGICA DO RATE LIMIT (idêntica à de cima) ---
+#         try:
+#             latest_otp = OTP.objects.filter(user=user).latest('created_at')
+#             time_since_last_otp = timezone.now() - latest_otp.created_at
+#
+#             if time_since_last_otp < timedelta(seconds=COOLDOWN_SECONDS):
+#                 # Neste caso, o usuário já foi criado, então o ideal é apenas
+#                 # informar que ele precisa esperar. A situação é rara, mas possível.
+#                 # Não retornamos um erro 429 aqui para não quebrar o fluxo de registro.
+#                 # Apenas não enviamos um novo email.
+#                 print(f"Rate limit atingido para o novo usuário {user.email}. Nenhum novo OTP enviado.")
+#                 return user  # Retorna o usuário sem enviar novo email
+#         except OTP.DoesNotExist:
+#             pass
+#         # --- FIM DA LÓGICA DO RATE LIMIT ---
+#
+#         otp_code = str(random.randint(100000, 999999))
+#         OTP.objects.create(user=user, otp_code=otp_code)
+#
+#         # ... (lógica de envio de email continua a mesma) ...
+#
+#         return user
+#
+# class NewUserValidationOTPView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         email = request.data.get('email')
+#         otp_code = request.data.get('otp')
+#
+#         MAX_ATTEMPTS = 5
+#
+#         if not email or not otp_code:
+#             return Response({'detail': 'Email e OTP são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         try:
+#             user = User.objects.get(email=email)
+#             otp_instance = OTP.objects.filter(user=user).latest('created_at')
+#
+#             if otp_instance.failed_attempts >= MAX_ATTEMPTS:
+#                 return Response({'detail': 'Este OTP foi bloqueado por excesso de tentativas.'},
+#                                 status=status.HTTP_400_BAD_REQUEST)
+#
+#             if otp_instance.otp_code != otp_code:
+#                 otp_instance.failed_attempts += 1
+#                 otp_instance.save()
+#
+#                 remaining_attempts = MAX_ATTEMPTS - otp_instance.failed_attempts
+#                 if remaining_attempts > 0:
+#                     return Response({
+#                         'detail': f'OTP inválido. Você tem {remaining_attempts} tentativas restantes.'
+#                     }, status=status.HTTP_400_BAD_REQUEST)
+#                 else:
+#                     return Response({
+#                         'detail': 'OTP inválido. O código foi bloqueado.'
+#                     }, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+#             if otp_instance.expires_at < timezone.now():
+#                 otp_instance.delete()
+#                 return Response({'detail': 'OTP expirado.'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+#             email_address = EmailAddress.objects.get(user=user, email=user.email)
+#             email_address.verified = True
+#             email_address.save()
+#             user.is_active = True
+#             user.save()
+#             otp_instance.delete()
+#
+#             return Response({'detail': 'Email verificado com sucesso!'}, status=status.HTTP_200_OK)
+#
+#         except User.DoesNotExist:
+#             return Response({'detail': 'Usuário não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+#         except OTP.DoesNotExist:
+#             return Response({'detail': 'Nenhum OTP ativo encontrado para este usuário.'},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#         except EmailAddress.DoesNotExist:
+#             return Response({'detail': 'Erro interno ao verificar o email.'},
+#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class PasswordResetRequestView(APIView):
+    def post(self, request, *args, **kwargs):
+        email: string = request.data.get('email')
+        COOLDOWN_SECONDS = 60
+
+
+        if not email.endswith('@aluno.univesp.br'):
+            return Response(
+                {'detail': 'Por favor, insira um email válido da UNIVESP.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = CustomUser.objects.get(email=email)
+
+            try:
+                latest_otp = OTP.objects.filter(user=user).latest('created_at')
+                time_since_last_otp = timezone.now() - latest_otp.created_at
+
+                if time_since_last_otp < timedelta(seconds=COOLDOWN_SECONDS):
+                    seconds_to_wait = COOLDOWN_SECONDS - time_since_last_otp.total_seconds()
+                    return Response(
+                        {
+                            'detail': f'Por favor, aguarde {int(seconds_to_wait)} segundos antes de solicitar um novo código.'},
+                        status=status.HTTP_429_TOO_MANY_REQUESTS
+                    )
+            except OTP.DoesNotExist:
+                pass
+
+            OTP.objects.filter(user=user).delete()
+            otp_code = str(random.randint(100000, 999999))
+            OTP.objects.create(user=user, otp_code=otp_code)
+
+            subject = 'Seu Código de Redefinição de Senha'
+
+            html_content = render_to_string('password_reset_otp_email.html', {
+                'user': user,
+                'otp_code': otp_code,
+            })
+            html_inlined = transform(html_content)
+
+            subject = 'Seu Código de Redefinição de Senha'
+
+            send_mail(
+                subject=subject,
+                message='',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                html_message=html_inlined,
+                fail_silently=False,
+            )
+
+
+        except CustomUser.DoesNotExist:
+            pass
+
+        return Response(
+            {'detail': 'Se um usuário com este email existir, um código foi enviado.'},
+            status=status.HTTP_200_OK
+        )
+
+class PasswordResetValidateOTPView(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp')
+        MAX_ATTEMPTS = 5
+
+        if not email or not otp_code:
+            return Response({'detail': 'Email e OTP são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(email=email)
+            otp_instance = OTP.objects.filter(user=user).latest('created_at')
+
+            if otp_instance.failed_attempts >= MAX_ATTEMPTS or otp_instance.expires_at < timezone.now():
+                return Response({'detail': 'OTP inválido ou expirado. Inicie o processo novamente'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if otp_instance.otp_code != otp_code:
+                otp_instance.failed_attempts += 1
+                otp_instance.save()
+                return Response({'detail': 'OTP inválido.', 'debug_otp_instance': otp_instance.otp_code, 'debug_otp_inserted': otp_code}, status=status.HTTP_400_BAD_REQUEST)
+
+            request.session['password_reset_user_id'] = user.id.__str__()
+
+            request.session.set_expiry(300)
+            otp_instance.delete()
+
+            return Response({'detail': 'OTP validado com sucesso.'}, status=status.HTTP_200_OK)
+
+        except (CustomUser.DoesNotExist, OTP.DoesNotExist):
+            return Response({'detail': 'OTP inválido ou expirado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetSetNewPasswordView(APIView):
+    def post(self, request, *args, **kwargs):
+
+        user_id = request.session.get('password_reset_user_id')
+        if not user_id:
+            return Response(
+                {'detail': 'Não autorizado. Por favor, valide seu OTP primeiro.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = PasswordResetSetNewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+            new_password = serializer.validated_data.get('new_password1')
+
+            user.set_password(new_password)
+            user.save()
+
+            request.session.flush()
+
+            return Response({'detail': 'Senha redefinida com sucesso!'}, status=status.HTTP_200_OK)
+
+        except CustomUser.DoesNotExist:
+            return Response({'detail': 'Usuário não encontrado.'}, status=status.HTTP_404_NOT_FOUND)

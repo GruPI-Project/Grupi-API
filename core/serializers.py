@@ -3,6 +3,7 @@ from cProfile import Profile
 
 from allauth.account.internal.userkit import user_email
 from django.db import models
+from django.contrib.auth.password_validation import validate_password
 from drf_spectacular.utils import extend_schema_field, extend_schema, OpenApiResponse
 from rest_framework import serializers
 from dj_rest_auth.serializers import LoginSerializer
@@ -10,7 +11,8 @@ from dj_rest_auth.registration.serializers import RegisterSerializer
 from .models import CustomUser, UserProfile, ProjetoIntegrador, DRP, Polo, Curso, Eixo, Tags, UserTags, ProjectGroup, \
     Membership, JoinRequest
 from django.db import transaction
-
+from django.template.loader import render_to_string
+from django.utils import timezone
 
 
 #Serializers de Usuario e Profile
@@ -287,3 +289,15 @@ class JoinRequestSerializer(serializers.ModelSerializer):
 class MessageResponseSerializer(serializers.Serializer):
     """Serializer para respostas de mensagem simples com uma chave 'detail'."""
     detail = serializers.CharField()
+
+
+#password reset otp
+class PasswordResetSetNewSerializer(serializers.Serializer):
+    new_password1 = serializers.CharField(required=True, write_only=True)
+    new_password2 = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        if data['new_password1'] != data['new_password2']:
+            raise serializers.ValidationError({"new_password2": "As senhas não coincidem."})
+        validate_password(data['new_password1'])
+        return data
