@@ -228,7 +228,6 @@ if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     EMAIL_HOST = 'localhost'
     EMAIL_PORT = 1025
-    EMAIL_
 
     # Não precisa de usuário, senha ou TLS para o MailHog
     EMAIL_USE_TLS = False
