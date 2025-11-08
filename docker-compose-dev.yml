@@ -19,7 +19,7 @@ services:
       - ./data:/app/data
       - ./staticfiles:/app/staticfiles
     labels:
-      - "project=grupi"
+      - "grupi"
 networks:
   default:
     name: grupi-network
