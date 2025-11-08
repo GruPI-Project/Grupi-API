@@ -150,3 +150,8 @@ class UserTagsAdmin(admin.ModelAdmin):
 class ProjectGroupTagsAdmin(admin.ModelAdmin):
     list_display = ('project_group', 'tag',)
     search_fields = ('project_group__name', 'tag__name')
+
+@admin.register(OTP)
+class OTPAdmin(admin.ModelAdmin):
+    list_display = ('user', 'code', 'created_at', 'is_used')
+    search_fields = ('user__email', 'code')
