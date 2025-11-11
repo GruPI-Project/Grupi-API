@@ -1,5 +1,6 @@
 import logging
 import random
+import string
 from datetime import timedelta
 from datetime import datetime
 from django.template.defaulttags import querystring
@@ -7,6 +8,7 @@ from django.core.mail import send_mail
 from django.http import Http404
 from django.db import transaction, IntegrityError
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import generics, serializers, permissions, status
 from drf_spectacular.utils import extend_schema_field, extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -19,6 +21,7 @@ from .models import Eixo, Polo, DRP, Curso, ProjetoIntegrador, Tags, UserProfile
 from .permissions import IsAdminOfGroup, CanRemoveMembership, IsMemberOfGroup
 from .serializers import *
 from premailer import transform
+from django.template.loader import render_to_string
 
 @extend_schema_view(
     get=extend_schema(
@@ -775,9 +778,8 @@ class JoinRequestSelfView(generics.ListAPIView):
 
 class PasswordResetRequestView(APIView):
     def post(self, request, *args, **kwargs):
-        email: string = request.data.get('email')
+        email = request.data.get('email')
         COOLDOWN_SECONDS = 60
-
 
         if not email.endswith('@aluno.univesp.br'):
             return Response(
@@ -831,6 +833,118 @@ class PasswordResetRequestView(APIView):
 
         return Response(
             {'detail': 'Se um usuário com este email existir, um código foi enviado.'},
+            status=status.HTTP_200_OK
+        )
+
+class RegistrationRequestOTPView(APIView):
+    """
+    View para solicitar reenvio de OTP de verificação durante o registro.
+    Permite que usuários que já se registraram mas não verificaram o email
+    possam solicitar um novo código de verificação.
+    """
+    
+    @extend_schema(
+        summary="Solicitar reenvio de OTP de registro",
+        description=(
+            "Solicita o reenvio do código OTP para verificação de email durante o registro. "
+            "Disponível apenas para usuários registrados mas não verificados.\n\n"
+            "**Validações:**\n"
+            "- Email deve ser da UNIVESP\n"
+            "- Usuário deve existir e estar registrado mas não verificado\n"
+            "- Rate limiting: 60 segundos entre solicitações\n\n"
+            "**Comportamento de Segurança:**\n"
+            "- Retorna sucesso mesmo se o usuário não existir (evita enumeração)\n"
+            "- Não revela se o usuário já está verificado"
+        ),
+        tags=['Autenticação'],
+        request=None,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="OTP enviado com sucesso ou usuário não encontrado"),
+            400: OpenApiResponse(response=MessageResponseSerializer, description="Email inválido ou usuário já verificado"),
+            429: OpenApiResponse(response=MessageResponseSerializer, description="Muitas solicitações. Aguarde antes de tentar novamente."),
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        COOLDOWN_SECONDS = 60
+
+        if not email:
+            return Response(
+                {'detail': 'Email é obrigatório.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not email.endswith('@aluno.univesp.br'):
+            return Response(
+                {'detail': 'Por favor, insira um email válido da UNIVESP.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = CustomUser.objects.get(email=email)
+            
+            # Verificar se o usuário já está verificado
+            if user.is_email_verified:
+                return Response(
+                    {'detail': 'Este email já foi verificado. Você pode fazer login.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Verificar se o usuário está ativo (já verificado mas não marcado como is_email_verified)
+            if user.is_active:
+                return Response(
+                    {'detail': 'Este email já foi verificado. Você pode fazer login.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Rate limiting - verificar se o usuário pode solicitar novo OTP
+            try:
+                latest_otp = OTP.objects.filter(user=user).latest('created_at')
+                time_since_last_otp = timezone.now() - latest_otp.created_at
+
+                if time_since_last_otp < timedelta(seconds=COOLDOWN_SECONDS):
+                    seconds_to_wait = COOLDOWN_SECONDS - time_since_last_otp.total_seconds()
+                    return Response(
+                        {
+                            'detail': f'Por favor, aguarde {int(seconds_to_wait)} segundos antes de solicitar um novo código.'
+                        },
+                        status=status.HTTP_429_TOO_MANY_REQUESTS
+                    )
+            except OTP.DoesNotExist:
+                pass
+
+            # Deletar OTPs existentes e criar novo
+            OTP.objects.filter(user=user).delete()
+            otp_code = str(random.randint(100000, 999999))
+            OTP.objects.create(user=user, otp_code=otp_code)
+
+            # Configurar email de verificação
+            subject = 'Ative sua conta no GruPi'
+            verification_url = f"{settings.FRONTEND_URL}/verify-email?email={user.email}&otp={otp_code}"
+
+            html_content = render_to_string('registration_otp_email.html', {
+                'user': user,
+                'otp_code': otp_code,
+                'verification_url': verification_url,
+            })
+            html_inlined = transform(html_content)
+
+            # Enviar email
+            send_mail(
+                subject=subject,
+                message='',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                html_message=html_inlined,
+                fail_silently=False,
+            )
+
+        except CustomUser.DoesNotExist:
+            # Para segurança, não revelamos se o usuário existe ou não
+            pass
+
+        return Response(
+            {'detail': 'Se um usuário com este email existir e precisar de verificação, um código foi enviado.'},
             status=status.HTTP_200_OK
         )
 
@@ -891,3 +1005,74 @@ class PasswordResetSetNewPasswordView(APIView):
 
         except CustomUser.DoesNotExist:
             return Response({'detail': 'Usuário não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class RegistrationValidateOTPView(APIView):
+    """
+    View para validar o OTP enviado durante o processo de registro.
+    Ativa o usuário após validação bem-sucedida.
+    """
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp')
+        MAX_ATTEMPTS = 5
+
+        if not email or not otp_code:
+            return Response({'detail': 'Email e OTP são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(email=email)
+            otp_instance = OTP.objects.filter(user=user).latest('created_at')
+
+            if otp_instance.failed_attempts >= MAX_ATTEMPTS or otp_instance.expires_at < timezone.now():
+                return Response({'detail': 'OTP inválido ou expirado. Inicie o processo novamente'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if otp_instance.otp_code != otp_code:
+                otp_instance.failed_attempts += 1
+                otp_instance.save()
+                return Response({'detail': 'OTP inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # OTP é válido - ativar o usuário
+            user.is_active = True
+            user.is_email_verified = True
+            user.save()
+            otp_instance.delete()
+
+            return Response({
+                'detail': 'Email verificado com sucesso! Sua conta foi ativada.',
+                'message': 'Você já pode fazer login no sistema.'
+            }, status=status.HTTP_200_OK)
+
+        except (CustomUser.DoesNotExist, OTP.DoesNotExist):
+            return Response({'detail': 'OTP inválido ou expirado.'}, status=status.HTTP_400_BAD_REQUEST)
+class AccountInactiveView(APIView):
+    """
+    View para tratar usuários inativos durante o processo de registro.
+    Retorna uma mensagem clara sobre a necessidade de verificação por email.
+    """
+    
+    @extend_schema(
+        summary="Conta inativa",
+        description=(
+            "Retorna informações para usuários com conta inativa. "
+            "Explica que a conta precisa de verificação por email antes do primeiro login."
+        ),
+        tags=['Autenticação'],
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                response=MessageResponseSerializer,
+                description="Informações sobre conta inativa e necessidade de verificação"
+            )
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                'detail': 'Sua conta ainda não foi ativada.',
+                'message': 'Você precisa verificar seu email antes de fazer o primeiro login. '
+                          'Verifique sua caixa de entrada e clique no link de verificação, '
+                          'ou solicite um novo código de verificação.'
+            },
+            status=status.HTTP_200_OK
+        )

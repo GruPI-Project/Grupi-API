@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Email - GruPi</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: sans-serif; background-color: #ffffff;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td>
+                <table align="center" border="3" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #FAF7F5">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="background-color: #8C1529; padding: 20px 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 32px;">GruPi</h1>
+                            <p style="color: #ffffff; margin: 5px 0 0; font-size: 14px;">A plataforma de Match da UNIVESP para conectar você à sua futura equipe.</p>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td bgcolor="#ffffff" style="padding: 40px 30px;">
+                            <h2 style="color: #8C1529; text-align: center; font-size: 24px; margin-top: 0;">BEM-VINDO AO GRUPi!</h2>
+                            <p style="color: #8C1529; text-align: center; font-size: 16px; margin-top: -15px; margin-bottom: 30px;">(e de um novo começo para seus projetos acadêmicos)</p>
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5;">Obrigado por se registrar no GruPi! Para ativar sua conta, precisamos verificar seu email.</p>
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5;">Digite o código de verificação abaixo para ativar sua conta:</p>
+                            <!-- OTP Code -->
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin: 20px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <div style="font-size: 28px; letter-spacing: 20px; color: #333333; background-color: #f2f2f2; padding: 15px 25px; border-radius: 8px; display: inline-block;">
+                                            <b>{{ otp_code }}</b>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- CTA Button -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center" style="padding: 20px 0;">
+                                        <a href="{{ verification_url }}" style="background-color: #8C1529; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">ATIVAR MINHA CONTA</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="color: #666666; font-size: 14px; text-align: center;">Este código é válido por 10 minutos e só pode ser usado uma vez.<br>Se você não se registrou no GruPi, pode ignorar este e-mail com segurança.</p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#f9f9f9" style="padding: 30px; text-align: center;">
+                            <p style="margin: 0; color: #8C1529; font-weight: bold;">Equipe GruPI</p>
+                            <a href="https://grupi-dev.pavops.net" style="color: #8C1529; text-decoration: none;">grupi-dev.pavops.net</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

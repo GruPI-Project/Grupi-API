@@ -22,6 +22,8 @@ class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = None
     email = models.EmailField(_('email address'), unique=True)
+    is_email_verified = models.BooleanField(default=False, verbose_name="Email verificado")
+    is_active = models.BooleanField(default=False, verbose_name="Ativo")
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

@@ -1,10 +1,10 @@
-
 from django.urls import path
 from .views import EixoListView, PoloListView, DRPListView, CursoListView, ProjetoIntegradorListView, TagsListView, \
     ProfileDetailsView, ProfileSelfView, UserTagsListView, ProjectGroupView, ProjectGroupDetailView, \
     MembershipDeleteView, ProjectGroupSelfView, LeaveGroupView, JoinGroupView, ProjectGroupMembersListView, \
     JoinRequestListView, JoinRequestApproveView, JoinRequestRejectView, JoinRequestSelfView, PasswordResetRequestView, \
-    PasswordResetValidateOTPView, PasswordResetSetNewPasswordView
+    PasswordResetValidateOTPView, PasswordResetSetNewPasswordView, RegistrationValidateOTPView, RegistrationRequestOTPView, \
+    AccountInactiveView
 
 app_name = 'core'
 
@@ -43,9 +43,16 @@ urlpatterns = [
     path('leave-group/', LeaveGroupView.as_view(), name='leave-group'),
 
     # --- Reset de senha com OTP
-    path('password-reset/request/', PasswordResetRequestView.as_view(), name='api-password-reset-request'),
+    path('password-reset/request-otp/', PasswordResetRequestView.as_view(), name='api-password-reset-request'),
     path('password-reset/validate-otp/', PasswordResetValidateOTPView.as_view(),
          name='api-password-reset-validate-otp'),
     path('password-reset/set-new/', PasswordResetSetNewPasswordView.as_view(), name='api-password-reset-set-new'),
+
+    # Registration OTP validation
+    path('registration/validate-otp/', RegistrationValidateOTPView.as_view(), name='api-registration-validate-otp'),
+    path('registration/request-otp/', RegistrationRequestOTPView.as_view(), name='api-registration-request-otp'),
+
+    # allauth account inactive view
+    path('account/inactive/', AccountInactiveView.as_view(), name='account_inactive'),
 
 ]

@@ -9,10 +9,12 @@ from rest_framework import serializers
 from dj_rest_auth.serializers import LoginSerializer
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from .models import CustomUser, UserProfile, ProjetoIntegrador, DRP, Polo, Curso, Eixo, Tags, UserTags, ProjectGroup, \
-    Membership, JoinRequest
+    Membership, JoinRequest, OTP
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
+from premailer import transform
+import random
 
 
 #Serializers de Usuario e Profile
@@ -24,7 +26,7 @@ class TagSerializer(serializers.ModelSerializer):
 class CustomRegisterSerializer(RegisterSerializer):
     """
     Serializer personalizado para o registro de usuários, incluindo
-    os campos obrigatórios do UserProfile.
+    os campos obrigatórios do UserProfile e tags.
     """
 
     # Removemos o campo username
@@ -36,7 +38,18 @@ class CustomRegisterSerializer(RegisterSerializer):
     curso = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), write_only=True)
     first_name = serializers.CharField(max_length=150, required=True)
     last_name = serializers.CharField(max_length=150, required=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tags.objects.all(),
+        many=True,
+        required=False,
+        allow_empty=True
+    )
 
+    def validate_tags(self, value):
+        """Validar que o usuário não pode ter mais de 5 tags."""
+        if len(value) > 5:
+            raise serializers.ValidationError("Não é possível associar mais de 5 tags a um usuário.")
+        return value
 
     def get_cleaned_data(self):
         # Pega os dados básicos (email, password, etc.) da classe pai
@@ -47,6 +60,7 @@ class CustomRegisterSerializer(RegisterSerializer):
             'drp': self.validated_data.get('drp', ''),
             'polo': self.validated_data.get('polo', ''),
             'curso': self.validated_data.get('curso', ''),
+            'tags': self.validated_data.get('tags', []),
         })
         return data
 
@@ -57,13 +71,49 @@ class CustomRegisterSerializer(RegisterSerializer):
             password=self.validated_data.get('password1'),
             first_name=self.validated_data.get('first_name', ''),
             last_name=self.validated_data.get('last_name', ''),
+            is_active=False,  # User starts as inactive until email is verified
         )
-        UserProfile.objects.create(
+        user_profile = UserProfile.objects.create(
             user=user,
             projeto_integrador=self.validated_data.get('projeto_integrador'),
             polo=self.validated_data.get('polo'),
             curso=self.validated_data.get('curso'),
         )
+        
+        # Create UserTags relationships for the provided tags
+        tags = self.validated_data.get('tags', [])
+        for tag in tags:
+            UserTags.objects.create(profile=user_profile, tag=tag)
+        
+        # Create OTP record for registration verification
+        otp_code = str(random.randint(100000, 999999))
+        OTP.objects.create(user=user, otp_code=otp_code)
+        
+        # Send verification email
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        subject = 'Ative sua conta no GruPi'
+        
+        # Create verification URL (in a real implementation, this would be a frontend URL)
+        verification_url = f"{settings.FRONTEND_URL}/verify-email?email={user.email}&otp={otp_code}"
+        
+        html_content = render_to_string('registration_otp_email.html', {
+            'user': user,
+            'otp_code': otp_code,
+            'verification_url': verification_url,
+        })
+        html_inlined = transform(html_content)
+        
+        send_mail(
+            subject=subject,
+            message='',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_inlined,
+            fail_silently=False,
+        )
+        
         return user
 
 class UserProfileSerializer(serializers.ModelSerializer):

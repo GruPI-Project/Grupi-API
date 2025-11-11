@@ -32,6 +32,14 @@ ENV = os.environ.get('DJANGO_ENV', 'local')
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
+if ENV == 'prod':
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://grupi.pavops.net')
+elif ENV == 'dev':
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://grupi-dev.pavops.net')
+else:
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:3000')
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -225,7 +233,7 @@ if DEBUG:
     # --- Backend de E-mail para Desenvolvimento com o mailhog em localhost ---
 
     #console email backend temporario
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'localhost'
     EMAIL_PORT = 1025
 
@@ -321,10 +329,10 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'none'
 CSRF_COOKIE_SAMESITE = 'none'
 CSRF_COOKIE_HTTPONLY = False
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:5173/*', 'http://localhost:5173/*']
-COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
-CSRF_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
-SESSION_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:5173/*', 'http://localhost:5173/*', 'http://127.0.0.1:3000/*']
+COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '127.0.0.1')
+CSRF_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '127.0.0.1')
+SESSION_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '127.0.0.1')
 # ==========================================
 # CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO
 # ==========================================
@@ -338,7 +346,9 @@ if ENV == 'prod' or ENV == 'dev':
     SECURE_HSTS_SECONDS = 31536000  # 1 ano
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
+    COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net, localhost')
+    CSRF_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
+    SESSION_COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '.grupi-dev.pavops.net')
 
     # Configurações adicionais de segurança
     X_FRAME_OPTIONS = 'DENY'
