@@ -229,20 +229,19 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED = True
 
 
-if DEBUG:
+if ENV == 'local':
     # --- Backend de E-mail para Desenvolvimento com o mailhog em localhost ---
 
     #console email backend temporario
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'localhost'
     EMAIL_PORT = 1025
-
     # Não precisa de usuário, senha ou TLS para o MailHog
     EMAIL_USE_TLS = False
     EMAIL_HOST_USER = ''
     EMAIL_HOST_PASSWORD = ''
 
-if not DEBUG:
+if ENV == 'production' or ENV == 'prod' or ENV == 'dev':
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.example.com')
     EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
